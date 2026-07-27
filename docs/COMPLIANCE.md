@@ -22,7 +22,8 @@ Confere nossa solução contra as "Notas de compromisso" e os "Requisitos não f
 > "Todos os recursos cloud que gerem custo (...) devem ser desprovisionados imediatamente após o término do evento. A responsabilidade pelo desprovisionamento é da equipe participante, e custos gerados por negligência após o prazo de encerramento serão de responsabilidade do participante ou de sua gestão direta."
 
 - [x] Não criamos SageMaker, instâncias ou buckets S3 (fora de escopo por decisão — nível 4 não entra na entrega).
-- [ ] **Ação pendente pós-evento**: confirmar com o time Zup se o Guardrail (ID + version) foi criado só para o desafio ou é recurso compartilhado — se foi criado só para isso, precisa ser removido/desprovisionado por vocês (ou por quem provisionou) logo após 30/07. Anotar isso como item de checklist do dia do evento, não deixar para depois.
+- [x] Guardrail (ID + version) foi criado pelo próprio usuário, na conta pessoal, exclusivamente para o desafio — não é recurso compartilhado nem pré-existente.
+- [ ] **Ação obrigatória pós-evento, dono: você.** Deletar o Guardrail (e qualquer outro recurso Bedrock criado pra isso) na sua conta AWS pessoal logo após a apresentação de 30/07 — mesmo dia, não deixar pra depois. Custo gerado por esquecimento é responsabilidade sua conforme a regra. Sugestão: colocar isso como último item do checklist do dia do evento, junto com "printar/gerar o relatório final antes de desligar tudo".
 
 ## 4. Requisitos não funcionais por nível
 
