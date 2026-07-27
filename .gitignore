@@ -6,6 +6,9 @@ venv/
 .DS_Store
 *.egg-info/
 .pytest_cache/
+output/
+*.egg-info
+build/
 .claude/
 .agents/
 skills-lock.json
