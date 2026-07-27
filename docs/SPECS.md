@@ -136,7 +136,7 @@ BEDROCK_GUARDRAIL_VERSION=1
 
 ## 8. Critério de "pronto" (Definition of Done) — Nível 3
 
-- [ ] Roda ponta a ponta local, sem S3, com `LLM_PROVIDER=bedrock` na máquina Zup.
+- [ ] Roda ponta a ponta local, sem S3, com `LLM_PROVIDER=bedrock` na conta do projeto Vivo/Zup.
 - [ ] Guardrail de entrada bloqueia os casos de prompt injection do dataset (validado nos ~10 casos identificados).
 - [ ] Guardrail de saída + regex garantem zero CPF/conta nas saídas (testado com casos que citam dados sensíveis no texto).
 - [ ] `agente_risco` cita seção da política em 100% dos casos com urgência Alta/Crítica.
@@ -144,3 +144,12 @@ BEDROCK_GUARDRAIL_VERSION=1
 - [ ] ADR em HTML navegável, com custo comparado por modelo.
 - [ ] Logs de cada agente (entrada, saída, tempo) persistidos em arquivo.
 - [ ] Resposta pronta para a pergunta obrigatória da banca (ferramentas usadas + contribuição de cada uma).
+- [x] Cobertura de testes unitários ≥ 90% (regra permanente, ver §9).
+
+## 9. Regras de qualidade de código
+
+- **Cobertura de testes ≥ 90%, sempre.** Configurada em `pyproject.toml` (`--cov-fail-under=90`) — rodar `pytest` puro já aplica a regra, não é opcional nem precisa lembrar de passar flag. Cobertura alta não é objetivo em si: cada teste deve provar um comportamento real (regra de negócio, caso de borda, correção de bug), não só "tocar a linha" pra inflar número.
+- **CI obrigatório**: `.github/workflows/tests.yml` roda a suíte completa (com o gate de 90%) em todo push/PR pra `main`. Se quiser bloquear merge de fato (não só ver o X vermelho), falta ativar "Require status checks" nas configurações de proteção de branch do GitHub — é um clique manual nas configs do repo, não faço isso automaticamente.
+- **Regra dura em código > confiar no julgamento do modelo**, sempre que a política interna definir um critério objetivo e verificável (ex: canal Banco Central/Procon → Crítica). O modelo decide o que é ambíguo; o código decide o que a política já decidiu.
+- **Sem gambiarra pra bater requisito**: se um agente ainda não existe (ex: `agente_risco` no Nível 1), o código não finge que existe — levanta `NotImplementedError` ou não é chamado, nunca retorna dado falso pra "passar no teste".
+- **Estrutura de pastas fixa** (`SPECS.md` §1) — todo código novo entra no pacote/subpasta certa (`agents/`, `llm/`, `rag/`, `guardrails/`), não em `run.py` ou em um arquivo solto na raiz.

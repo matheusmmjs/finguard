@@ -1,7 +1,6 @@
 import json
-from unittest.mock import MagicMock
 
-from finguard.agents.triagem import classificar
+from finguard.agents.triagem import _parse_llm_json, classificar
 from finguard.schemas import ReclamacaoInput, Urgencia
 
 
@@ -111,3 +110,29 @@ def test_resumo_ofusca_palavrao():
 
     assert "merda" not in output.resumo.lower()
     assert "m****" in output.resumo
+
+
+def test_parse_llm_json_aceita_bloco_markdown_multilinha():
+    payload = {
+        "categoria": "Atendimento",
+        "produto": "Não Identificado",
+        "sentimento": "Neutro",
+        "urgencia": "Baixa",
+        "resumo": "resumo qualquer",
+    }
+    raw = "```json\n" + json.dumps(payload) + "\n```"
+
+    assert _parse_llm_json(raw) == payload
+
+
+def test_parse_llm_json_aceita_bloco_markdown_em_uma_linha():
+    payload = {
+        "categoria": "Atendimento",
+        "produto": "Não Identificado",
+        "sentimento": "Neutro",
+        "urgencia": "Baixa",
+        "resumo": "resumo qualquer",
+    }
+    raw = "```json" + json.dumps(payload) + "```"
+
+    assert _parse_llm_json(raw) == payload

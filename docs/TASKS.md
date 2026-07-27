@@ -14,15 +14,19 @@ Hoje: 27/07. Entrega: 30/07. Sem mais planejamento depois deste documento — a 
 - [ ] `OPENAI_API_KEY` pessoal disponível no `.env` local
 - [ ] Confirmação por escrito da organização sobre uso da conta de dev do projeto (não bloqueia começar a codar, mas fica pendente — ver `COMPLIANCE.md` §2)
 
-## Backlog — Nível 1: Classificador
+## Backlog — Nível 1: Classificador — ✅ CONCLUÍDO (validado com chamada real, 27/07)
 
-| # | Tarefa | Critério de aceite |
-|---|---|---|
-| 1.1 | Setup do projeto (estrutura `src/finguard/`, `requirements.txt`, `.env.example`, venv) | `python -m finguard.run --help` roda sem erro |
-| 1.2 | Schemas Pydantic de entrada/saída do `agente_triagem` (SPECS §5) | Schema rejeita valor fora do enum de categoria/produto/sentimento/urgência |
-| 1.3 | `LLMClient` (interface) + `OpenAIClient` | Chamada de teste simples retorna resposta do modelo em `OPENAI_MODEL_TRIAGEM` |
-| 1.4 | Prompt + lógica do `agente_triagem`, com regra dura de urgência Crítica forçada por código (fraude/Bacen/Procon/vulnerabilidade) | Rodando o exemplo do desafio + 3 casos do dataset (incluindo 1 caso Banco Central) retorna JSON no schema certo, urgência Crítica correta nos casos que exigem |
-| 1.5 | Loop que processa o CSV inteiro e salva saída `.json` | Processa as ~500 linhas sem erro fatal |
+| # | Tarefa | Critério de aceite | Status |
+|---|---|---|---|
+| 1.1 | Setup do projeto (estrutura `src/finguard/`, `requirements.txt`, `.env.example`, venv) | `python -m finguard.run --help` roda sem erro | ✅ |
+| 1.2 | Schemas Pydantic de entrada/saída do `agente_triagem` (SPECS §5) | Schema rejeita valor fora do enum de categoria/produto/sentimento/urgência | ✅ |
+| 1.3 | `LLMClient` (interface) + `OpenAIClient` | Chamada de teste simples retorna resposta do modelo em `OPENAI_MODEL_TRIAGEM` | ✅ |
+| 1.4 | Prompt + lógica do `agente_triagem`, com regra dura de urgência Crítica forçada por código (fraude/Bacen/Procon/vulnerabilidade) | Rodando o exemplo do desafio + 3 casos do dataset (incluindo 1 caso Banco Central) retorna JSON no schema certo, urgência Crítica correta nos casos que exigem | ✅ |
+| 1.5 | Loop que processa o CSV inteiro e salva saída `.json` | Processa as ~500 linhas sem erro fatal | ✅ (parse das 500 linhas confirmado; chamada real com `--limit 5` validada pelo usuário em 27/07) |
+
+**Achado corrigido durante a validação real**: o modelo, sem instrução explícita, classificou uma ameaça condicional de escalar pro Banco Central (`REC-2026-00509`) como urgência Crítica — mesmo padrão do exemplo oficial do desafio, que espera Alta. Prompt do `agente_triagem` foi ajustado com a distinção explícita (já registrado ≠ ameaça futura) e o exemplo oficial como âncora. Reconfirmado com nova chamada real: corrigido.
+
+**Regra de qualidade adicionada nesta fase**: cobertura de testes ≥ 90% obrigatória (`pyproject.toml`, `--cov-fail-under=90`), aplicada por padrão em qualquer `pytest`, mais workflow de CI em `.github/workflows/tests.yml`. Ver `SPECS.md` §9. Cobertura atual: 99%.
 
 ## Backlog — Nível 2: Orquestrador (LangGraph)
 

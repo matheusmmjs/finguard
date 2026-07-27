@@ -18,12 +18,25 @@ um objeto JSON, sem texto antes ou depois, no formato:
 }}
 
 Regras de urgência (política interna POL-SAC-001):
-- Crítica: indício de fraude, menção a Banco Central/Procon/Justiça, vulnerabilidade \
-extrema do cliente.
+- Crítica: indício de fraude, reclamação JÁ registrada/formalizada em Banco Central, \
+Procon ou Justiça, vulnerabilidade extrema do cliente.
 - Alta: valor significativo (acima de R$ 500), múltiplas tentativas sem resolução, \
-ameaça de escalar para órgão regulador.
+AMEAÇA CONDICIONAL/FUTURA de escalar para órgão regulador (ex: "vou procurar o \
+Banco Central se não resolverem").
 - Média: impacto financeiro moderado, problema recorrente, falha de atendimento.
 - Baixa: dúvida operacional, insatisfação leve sem impacto financeiro.
+
+Atenção: menção condicional/futura a um órgão regulador (o cliente AMEAÇA escalar, \
+mas ainda não escalou) NÃO é Crítica — é Alta. Só é Crítica quando a reclamação já \
+foi de fato registrada nesses canais. Exemplo oficial do desafio:
+
+Texto: "Já é a terceira vez que ligo pedindo o estorno de uma cobrança no meu cartão \
+que eu não fiz. Ninguém resolve nada. Vou procurar o Banco Central se não resolverem \
+até sexta."
+Saída correta: {{"categoria": "Cobrança Indevida", "produto": "Cartão de Crédito", \
+"sentimento": "Crítico", "urgencia": "Alta", "resumo": "Cliente relata cobrança não \
+reconhecida no cartão de crédito, com três tentativas de contato sem resolução. \
+Ameaça escalar para Banco Central."}}
 """
 
 
