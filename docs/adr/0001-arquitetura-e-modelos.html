@@ -76,14 +76,15 @@
 <tr><td>Claude Sonnet 5</td><td>$2–3</td><td>$10–15</td><td>Raciocínio complexo (não necessário aqui)</td></tr>
 </table>
 
-<p><strong>Alocação escolhida por agente:</strong></p>
+<p><strong>Alocação por agente — baseline atual (fase 1) vs. alvo (fase 2):</strong></p>
 <table>
-<tr><th>Agente</th><th>Modelo</th><th>Justificativa</th></tr>
-<tr><td><code>agente_triagem</code></td><td>Nova Micro</td><td>Classificação e resumo são o caso de uso onde a Amazon posiciona o Nova Micro como mais forte; ~28x mais barato que Haiku. Erro de categoria tem custo baixo (reprocessável, não é decisão de compliance).</td></tr>
-<tr><td><code>agente_risco</code></td><td>Claude Haiku 4.5</td><td>Precisa citar a cláusula correta da política e aplicar regra condicional (fraude/Bacen/Procon → Crítica). Testes públicos mostram Nova Micro perdendo estrutura de saída sob validação rígida quando o input é ambíguo — inaceitável aqui, pois o parecer alimenta ação de compliance real.</td></tr>
-<tr><td><code>agente_relatorio</code></td><td>Nova Micro</td><td>Trabalho de agregação/formatação, baixo raciocínio — mesmo argumento de custo do agente de triagem.</td></tr>
-<tr><td>Guardrail (entrada/saída)</td><td>Bedrock Guardrails (não é um LLM de chat)</td><td>Custo cobrado por unidade de conteúdo avaliado, independente do modelo de chat escolhido; já provisionado (ID + version) para o desafio.</td></tr>
+<tr><th>Agente</th><th>Fase 1 — baseline</th><th>Fase 2 — ajuste pontual planejado</th><th>Justificativa</th></tr>
+<tr><td><code>agente_triagem</code></td><td>Nova Micro</td><td>Nova Micro (mantém)</td><td>Classificação e resumo são o caso de uso onde a Amazon posiciona o Nova Micro como mais forte; ~28x mais barato que Haiku. Erro de categoria tem custo baixo (reprocessável, não é decisão de compliance).</td></tr>
+<tr><td><code>agente_risco</code></td><td>Nova Micro</td><td>Claude Haiku 4.5</td><td>Precisa citar a cláusula correta da política e aplicar regra condicional (fraude/Bacen/Procon → Crítica). Testes públicos mostram Nova Micro perdendo estrutura de saída sob validação rígida quando o input é ambíguo — inaceitável aqui, pois o parecer alimenta ação de compliance real. Sobe para Haiku assim que o baseline estiver validado ponta a ponta.</td></tr>
+<tr><td><code>agente_relatorio</code></td><td>Nova Micro</td><td>Nova Micro (mantém)</td><td>Trabalho de agregação/formatação, baixo raciocínio — mesmo argumento de custo do agente de triagem.</td></tr>
+<tr><td>Guardrail (entrada/saída)</td><td>Bedrock Guardrails (não é um LLM de chat)</td><td>—</td><td>Custo cobrado por unidade de conteúdo avaliado, independente do modelo de chat escolhido; já provisionado (ID + version) para o desafio.</td></tr>
 </table>
+<p>Toda essa alocação vale só para <code>BedrockClient</code> (validação/demo). Na máquina pessoal, sem acesso a Bedrock, todos os agentes rodam em <code>OpenAIClient</code> durante o desenvolvimento — isso não muda a lógica nem os schemas, só troca o motor de inferência (ver <code>SPECS.md</code> §7).</p>
 <p>Estimativa de custo por reclamação processada (3 chamadas de agente, ~800 tokens de entrada + ~300 de saída cada, ordem de grandeza): abaixo de <strong>US$ 0.002</strong> por reclamação — para o dataset completo (~500 linhas), estimativa total inferior a <strong>US$ 1,00</strong> em chamadas de modelo, fora custo de guardrail e embeddings do RAG (também baixo, dado o volume).</p>
 
 <h2 id="seguranca">6. Recomendações de segurança</h2>

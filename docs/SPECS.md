@@ -41,8 +41,12 @@ class LLMClient(Protocol):
     def complete(self, system: str, user: str, *, temperature: float = 0.0) -> str: ...
 ```
 
-- `OpenAIClient`: usa chave pessoal (`OPENAI_API_KEY`), modelo barato (ex: `gpt-4o-mini` ou equivalente mais recente/barato disponível) para todo desenvolvimento e teste de lógica/prompt na máquina pessoal.
-- `BedrockClient`: usa boto3 (`bedrock-runtime`), credenciais AWS da Zup, modelo Claude via Bedrock. Único client usado na entrega final/demo.
+- `OpenAIClient`: usa chave pessoal (`OPENAI_API_KEY`). **Único provider disponível na máquina pessoal** (sem acesso a Bedrock aqui) — todo agente, em todo teste local, roda em modelo OpenAI, independente de qual modelo Bedrock está mapeado pra ele em produção.
+- `BedrockClient`: usa boto3 (`bedrock-runtime`), credenciais da conta AWS pessoal usada para os testes (conta própria do usuário, separada da corporativa — ver `COMPLIANCE.md` §2). Único client usado na validação real e na demo final.
+
+Cada agente resolve seu próprio modelo por variável de ambiente (ver §7), não é um único `MODEL_ID` global — assim dá pra trocar o modelo de um agente sem mexer nos outros.
+
+**Fase atual (baseline): todos os agentes em Nova Micro no lado Bedrock.** Ajuste por agente vem depois, pontualmente — o candidato já identificado é subir `agente_risco` para Claude Haiku 4.5 (ver ADR 0001, §5) assim que o baseline em Nova Micro estiver funcionando ponta a ponta.
 
 Mesma assinatura nos dois — resto do código (grafo, agentes, parsing) não muda ao trocar.
 
@@ -114,12 +118,18 @@ Estado do grafo carrega: `texto_original`, saída de cada agente, logs (`timesta
 ## 7. Variáveis de ambiente (`.env.example`)
 
 ```
-LLM_PROVIDER=openai        # openai | bedrock
+LLM_PROVIDER=openai        # openai (máquina pessoal) | bedrock (validação/demo)
+
 OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4o-mini
+OPENAI_MODEL_TRIAGEM=gpt-4o-mini
+OPENAI_MODEL_RISCO=gpt-4o-mini
+OPENAI_MODEL_RELATORIO=gpt-4o-mini
+
 AWS_REGION=
 AWS_PROFILE=
-BEDROCK_MODEL_ID=
+BEDROCK_MODEL_ID_TRIAGEM=amazon.nova-micro-v1:0
+BEDROCK_MODEL_ID_RISCO=amazon.nova-micro-v1:0      # trocar para anthropic.claude-haiku-4-5 quando ajustar pontualmente
+BEDROCK_MODEL_ID_RELATORIO=amazon.nova-micro-v1:0
 BEDROCK_GUARDRAIL_ID=
 BEDROCK_GUARDRAIL_VERSION=1
 ```

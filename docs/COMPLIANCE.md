@@ -15,10 +15,7 @@ Confere nossa solução contra as "Notas de compromisso" e os "Requisitos não f
 > "A implementação deve ocorrer exclusivamente nos ambientes designados para o desafio. Fica vedado o uso de ambientes corporativos de produção, homologação ou desenvolvimento institucional, incluindo buckets, endpoints, bancos de dados ou qualquer recurso vinculado a operações reais."
 
 - [x] Máquina pessoal: só usada para desenvolvimento de código e testes de lógica com `OpenAIClient` (conta pessoal, fora de qualquer ambiente Zup) — sem risco de tocar ambiente corporativo.
-- [ ] **Máquina Zup / conta AWS**: PENDENTE DE CONFIRMAÇÃO. A regra exige que Bedrock, Guardrail ID/version e qualquer recurso usado sejam da **conta designada especificamente para o desafio** (a tabela "Diferenças por público" do documento oficial diz "Bedrock: Conta AWS própria (custo estimado)" para Zup — ou seja, uma conta AWS própria do desafio/equipe, não a conta corporativa de produção do dia a dia).
-  - Preciso que você confirme: o Bedrock e o Guardrail ID/version que você já tem em mãos foram provisionados **especificamente para este desafio** (conta separada, mesmo que seja conta AWS "da Zup" só pra isso), ou é o mesmo acesso Bedrock que você usa no trabalho normal, ligado a ambiente corporativo real?
-  - Se for a conta oficial do desafio: conforme.
-  - Se for acesso corporativo do dia a dia: violação da regra 2, precisa pedir provisionamento separado ao time organizador antes do dia 30/07.
+- [x] **Máquina Zup / conta AWS**: confirmado com o time organizador. Testes de Bedrock rodam em conta AWS própria do usuário (conta pessoal, não a corporativa de produção), conforme a tabela "Diferenças por público" do desafio ("Bedrock: Conta AWS própria (custo estimado)" para Zup). Sem uso de ambiente corporativo real.
 
 ## 3. Desprovisionamento de recursos
 
@@ -42,5 +39,5 @@ Confere nossa solução contra as "Notas de compromisso" e os "Requisitos não f
 
 ## 5. Pendências que precisam de resposta sua antes de codar
 
-1. Confirmar se Bedrock/Guardrail em mãos é conta designada para o desafio (item 2 acima) — crítico, pode ser motivo de desclassificação se não for.
-2. Confirmar responsável por desprovisionar o Guardrail após 30/07, se aplicável (item 3 acima).
+1. ~~Confirmar se Bedrock/Guardrail em mãos é conta designada para o desafio~~ — **resolvido**: conta própria, confirmada com o time.
+2. Confirmar responsável por desprovisionar o Guardrail após 30/07, se aplicável (item 3 acima). Ainda em aberto — anotar como item do checklist do dia do evento.
