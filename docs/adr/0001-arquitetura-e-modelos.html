@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>ADR 0001 — FinGuard: Arquitetura e Seleção de Modelos</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.6; color: #1a1a2e; }
+  h1 { font-size: 1.6rem; border-bottom: 2px solid #1a1a2e; padding-bottom: .5rem; }
+  h2 { font-size: 1.2rem; margin-top: 2.5rem; color: #16213e; }
+  nav { background: #f4f4f8; border: 1px solid #ddd; border-radius: 6px; padding: 1rem 1.5rem; margin: 1.5rem 0; }
+  nav a { display: block; padding: .15rem 0; color: #1a1a2e; text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid #ccc; padding: .5rem .7rem; text-align: left; }
+  th { background: #1a1a2e; color: #fff; }
+  code { background: #f0f0f4; padding: .1rem .35rem; border-radius: 3px; font-size: .9em; }
+  .tag { display: inline-block; padding: .15rem .6rem; border-radius: 10px; font-size: .8rem; font-weight: 600; }
+  .status-accepted { background: #d1f4d0; color: #14532d; }
+  .back-top { font-size: .85rem; }
+  footer { margin-top: 3rem; font-size: .85rem; color: #666; border-top: 1px solid #ddd; padding-top: 1rem; }
+</style>
+</head>
+<body>
+
+<span class="tag status-accepted">Aceito</span>
+<h1 id="topo">ADR 0001 — FinGuard: Arquitetura multi-agente e seleção de modelos</h1>
+<p>Documento: FinGuard / Future Minds 3 (Zup) · Versão: 1.0 · Data: 2026-07-27</p>
+
+<nav>
+<a href="#contexto">1. Contexto</a>
+<a href="#opcoes">2. Opções de arquitetura consideradas</a>
+<a href="#decisao">3. Decisão final</a>
+<a href="#consequencias">4. Consequências e trade-offs</a>
+<a href="#custos">5. Análise de custos estimada</a>
+<a href="#seguranca">6. Recomendações de segurança</a>
+</nav>
+
+<h2 id="contexto">1. Contexto do problema</h2>
+<p>Instituições financeiras recebem milhares de reclamações por dia, em texto livre, por múltiplos canais (SAC, Ouvidoria, Redes Sociais, Banco Central, Procon). A triagem manual é lenta, inconsistente entre analistas, e o maior risco não é a demora — é o erro de escalonamento: uma reclamação com indício de fraude ou menção a órgão regulador que não é tratada como crítica gera multa, dano de imagem ou violação de LGPD. O dataset fornecido para o desafio (~500 reclamações fictícias) também contém tentativas reais de prompt injection (extração de system prompt, jailbreak via persona, inversão de regras), simulando um vetor de ataque real contra o próprio sistema de IA.</p>
+
+<h2 id="opcoes">2. Opções de arquitetura consideradas</h2>
+
+<h3>Opção A — Classificador único (chamada única de LLM)</h3>
+<p>Um único prompt recebe o texto e devolve todos os campos (categoria, produto, sentimento, urgência, resumo, risco) em uma chamada. Mais simples de implementar.</p>
+<p><strong>Rejeitada:</strong> mistura responsabilidades (classificação e análise de risco/conformidade no mesmo prompt), dificulta auditoria (não há separação entre "o que é" e "o que fazer a respeito"), e não atende ao requisito de nível 2/3 de arquitetura multi-agente com responsabilidades distintas e rastreáveis.</p>
+
+<h3>Opção B — Multi-agente genérico, sem guardrail nem RAG (nível 2 puro)</h3>
+<p>Grafo com agente de triagem, agente de risco e agente de relatório, mas sem proteção de entrada/saída e sem consulta à política interna — decisões de urgência dependem só do bom senso do prompt.</p>
+<p><strong>Rejeitada:</strong> não resiste às tentativas de prompt injection presentes no próprio dataset, não é auditável (parecer de risco sem base documental) e não atende aos requisitos obrigatórios de nível 3 (guardrails, RAG, ADR).</p>
+
+<h3>Opção C — Escudo de Compliance: multi-agente + guardrails de entrada/saída + RAG na política interna (escolhida)</h3>
+<p>Mesma espinha dorsal de agentes da Opção B, acrescida de: nó de guardrail obrigatório antes de qualquer processamento, RAG sobre a política interna (POL-SAC-001) para fundamentar o parecer de risco com citação de cláusula, e guardrail de saída para blindar dado sensível.</p>
+
+<h2 id="decisao">3. Decisão final</h2>
+<p>Adotar a <strong>Opção C</strong>. O grafo segue a estrutura:</p>
+<p><code>_start_ → guardrail_entrada → [BLOCK] resposta_bloqueio → __end__</code><br>
+<code>guardrail_entrada → [PASS] agente_triagem → agente_risco → agente_relatorio → guardrail_saida → __end__</code></p>
+<p>Cliente de LLM abstraído atrás de uma interface única (<code>LLMClient</code>), com duas implementações intercambiáveis por variável de ambiente: <code>OpenAIClient</code> para desenvolvimento local (sem acesso a Bedrock na máquina pessoal) e <code>BedrockClient</code> (boto3) para execução real, usando o Guardrail já provisionado (ID + version) na conta Zup designada para o desafio. Essa escolha existe unicamente para viabilizar o desenvolvimento em duas máquinas diferentes — a saída avaliada e a demo final rodam sempre em <code>BedrockClient</code>.</p>
+
+<h2 id="consequencias">4. Consequências e trade-offs</h2>
+<ul>
+<li><strong>Positivo:</strong> cada agente é testável e auditável isoladamente; erro de um agente não contamina silenciosamente os outros; guardrail como primeiro nó garante que nenhuma reclamação é processada sem checagem, mesmo em caso de falha de outro componente.</li>
+<li><strong>Positivo:</strong> RAG citando cláusula específica torna o parecer de risco defensável perante compliance/regulador — não é uma "caixa preta" dizendo apenas "Crítica".</li>
+<li><strong>Trade-off:</strong> mais chamadas de LLM que a Opção A (uma por agente, não uma só) — mitigado usando modelo barato (Nova Micro) nos agentes de menor complexidade e reservando modelo mais caro (Claude Haiku) só para o agente de risco.</li>
+<li><strong>Trade-off:</strong> desenvolver com <code>OpenAIClient</code> e avaliar com <code>BedrockClient</code> introduz risco de divergência de comportamento entre modelos de famílias diferentes — mitigado com bateria de teste completa na máquina Zup antes do evento (ver <a href="../PRD.md">PRD, seção 8</a>).</li>
+</ul>
+
+<h2 id="custos">5. Análise de custos estimada</h2>
+<p>Preços Bedrock on-demand, por milhão de tokens (input / output), levantados em jul/2026:</p>
+<table>
+<tr><th>Modelo</th><th>Input</th><th>Output</th><th>Perfil</th></tr>
+<tr><td>Amazon Nova Micro</td><td>$0.035</td><td>$0.14</td><td>Classificação simples, altíssima velocidade, custo mínimo</td></tr>
+<tr><td>Amazon Nova Lite</td><td>$0.06</td><td>$0.24</td><td>Tarefas leves multimodais</td></tr>
+<tr><td>Amazon Nova Pro</td><td>$0.80</td><td>$3.20</td><td>Raciocínio médio</td></tr>
+<tr><td>Claude Haiku 4.5</td><td>$1.00</td><td>$5.00</td><td>JSON/instrução confiáveis, raciocínio condicional</td></tr>
+<tr><td>Claude Sonnet 5</td><td>$2–3</td><td>$10–15</td><td>Raciocínio complexo (não necessário aqui)</td></tr>
+</table>
+
+<p><strong>Alocação escolhida por agente:</strong></p>
+<table>
+<tr><th>Agente</th><th>Modelo</th><th>Justificativa</th></tr>
+<tr><td><code>agente_triagem</code></td><td>Nova Micro</td><td>Classificação e resumo são o caso de uso onde a Amazon posiciona o Nova Micro como mais forte; ~28x mais barato que Haiku. Erro de categoria tem custo baixo (reprocessável, não é decisão de compliance).</td></tr>
+<tr><td><code>agente_risco</code></td><td>Claude Haiku 4.5</td><td>Precisa citar a cláusula correta da política e aplicar regra condicional (fraude/Bacen/Procon → Crítica). Testes públicos mostram Nova Micro perdendo estrutura de saída sob validação rígida quando o input é ambíguo — inaceitável aqui, pois o parecer alimenta ação de compliance real.</td></tr>
+<tr><td><code>agente_relatorio</code></td><td>Nova Micro</td><td>Trabalho de agregação/formatação, baixo raciocínio — mesmo argumento de custo do agente de triagem.</td></tr>
+<tr><td>Guardrail (entrada/saída)</td><td>Bedrock Guardrails (não é um LLM de chat)</td><td>Custo cobrado por unidade de conteúdo avaliado, independente do modelo de chat escolhido; já provisionado (ID + version) para o desafio.</td></tr>
+</table>
+<p>Estimativa de custo por reclamação processada (3 chamadas de agente, ~800 tokens de entrada + ~300 de saída cada, ordem de grandeza): abaixo de <strong>US$ 0.002</strong> por reclamação — para o dataset completo (~500 linhas), estimativa total inferior a <strong>US$ 1,00</strong> em chamadas de modelo, fora custo de guardrail e embeddings do RAG (também baixo, dado o volume).</p>
+
+<h2 id="seguranca">6. Recomendações de segurança</h2>
+<ul>
+<li>Guardrail de entrada é sempre o primeiro nó do grafo — nenhum caminho de código pode chamar os demais agentes sem passar por ele antes.</li>
+<li>Guardrail de saída combinado com verificação determinística por regex (CPF, número de conta) como camada extra — não depender só do julgamento do modelo para dado sensível.</li>
+<li>Resposta de bloqueio nunca deve ecoar ou explicar a instrução maliciosa recebida, nem revelar detalhe de configuração interna (mensagem fixa, genérica, em português).</li>
+<li>Logs de execução não devem persistir o texto original da reclamação além do necessário para a demo — evitar reter dado (mesmo fictício) além do escopo do desafio, seguindo o espírito da política de dados do POL-SAC-001 (seção 5).</li>
+<li>Todo recurso de nuvem que gera custo (guardrail, se criado especificamente para o desafio) deve ser desprovisionado imediatamente após o evento, conforme regra de compromisso do desafio.</li>
+</ul>
+
+<footer>
+<p><a class="back-top" href="#topo">↑ voltar ao topo</a> · FinGuard — Future Minds 3 (Zup) · ver também <a href="../PRD.md">PRD</a> e <a href="../SPECS.md">SPECS</a></p>
+</footer>
+
+</body>
+</html>
