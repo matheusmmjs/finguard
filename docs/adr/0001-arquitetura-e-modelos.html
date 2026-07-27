@@ -55,7 +55,7 @@
 <p>Adotar a <strong>Opção C</strong>. O grafo segue a estrutura:</p>
 <p><code>_start_ → guardrail_entrada → [BLOCK] resposta_bloqueio → __end__</code><br>
 <code>guardrail_entrada → [PASS] agente_triagem → agente_risco → agente_relatorio → guardrail_saida → __end__</code></p>
-<p>Cliente de LLM abstraído atrás de uma interface única (<code>LLMClient</code>), com duas implementações intercambiáveis por variável de ambiente: <code>OpenAIClient</code> para desenvolvimento local (sem acesso a Bedrock na máquina pessoal) e <code>BedrockClient</code> (boto3) para execução real, usando o Guardrail já provisionado (ID + version) na conta Zup designada para o desafio. Essa escolha existe unicamente para viabilizar o desenvolvimento em duas máquinas diferentes — a saída avaliada e a demo final rodam sempre em <code>BedrockClient</code>.</p>
+<p>Cliente de LLM abstraído atrás de uma interface única (<code>LLMClient</code>), com duas implementações intercambiáveis por variável de ambiente: <code>OpenAIClient</code> para desenvolvimento local (sem acesso a Bedrock na máquina pessoal) e <code>BedrockClient</code> (boto3) para execução real, usando o Guardrail já provisionado (ID + version 1) na conta AWS do projeto Vivo (cliente Zup do usuário) — acesso corporativo de projeto, já testado e validado, uso restrito à janela do desafio. Ver <code>COMPLIANCE.md</code> §2 para o registro do risco residual dessa escolha frente à regra de "ambientes de execução" do desafio. Essa divisão de client existe unicamente para viabilizar o desenvolvimento em duas máquinas diferentes — a saída avaliada e a demo final rodam sempre em <code>BedrockClient</code>.</p>
 
 <h2 id="consequencias">4. Consequências e trade-offs</h2>
 <ul>

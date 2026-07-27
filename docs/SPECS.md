@@ -42,7 +42,7 @@ class LLMClient(Protocol):
 ```
 
 - `OpenAIClient`: usa chave pessoal (`OPENAI_API_KEY`). **Único provider disponível na máquina pessoal** (sem acesso a Bedrock aqui) — todo agente, em todo teste local, roda em modelo OpenAI, independente de qual modelo Bedrock está mapeado pra ele em produção.
-- `BedrockClient`: usa boto3 (`bedrock-runtime`), credenciais da conta AWS pessoal usada para os testes (conta própria do usuário, separada da corporativa — ver `COMPLIANCE.md` §2). Único client usado na validação real e na demo final.
+- `BedrockClient`: usa boto3 (`bedrock-runtime`), credenciais da conta AWS do projeto Vivo (cliente Zup do usuário) — acesso já testado e validado, Guardrail ID + version 1 já provisionado. Ver `COMPLIANCE.md` §2 para o registro de risco residual dessa escolha (ambiente corporativo de projeto, não conta pessoal isolada). Único client usado na validação real e na demo final; uso restrito à janela do desafio, sem testes extensivos, para limitar custo.
 
 Cada agente resolve seu próprio modelo por variável de ambiente (ver §7), não é um único `MODEL_ID` global — assim dá pra trocar o modelo de um agente sem mexer nos outros.
 
