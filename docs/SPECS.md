@@ -153,3 +153,14 @@ BEDROCK_GUARDRAIL_VERSION=1
 - **Regra dura em código > confiar no julgamento do modelo**, sempre que a política interna definir um critério objetivo e verificável (ex: canal Banco Central/Procon → Crítica). O modelo decide o que é ambíguo; o código decide o que a política já decidiu.
 - **Sem gambiarra pra bater requisito**: se um agente ainda não existe (ex: `agente_risco` no Nível 1), o código não finge que existe — levanta `NotImplementedError` ou não é chamado, nunca retorna dado falso pra "passar no teste".
 - **Estrutura de pastas fixa** (`SPECS.md` §1) — todo código novo entra no pacote/subpasta certa (`agents/`, `llm/`, `rag/`, `guardrails/`), não em `run.py` ou em um arquivo solto na raiz.
+
+## 10. Rastreamento de custo
+
+Objetivo: nunca perder visibilidade de quanto o FinGuard gasta em chamada de LLM, e saber separar isso do custo de *construir* o FinGuard (Claude Code).
+
+- **Toda chamada de LLM é registrada automaticamente** (`src/finguard/cost_tracking.py`), tanto em `OpenAIClient` quanto em `BedrockClient` — não é um passo manual, acontece dentro do `complete()` de cada client.
+- Log local, append-only, em `logs/llm_usage.jsonl`: 1 linha JSON por chamada (`timestamp`, `provider`, `agent`, `model`, `tokens_in`, `tokens_out`, `cost_usd`). Nunca grava o texto da reclamação nem a resposta do modelo — só metadado de custo.
+- Preço por modelo mantido à mão em `PRICING_USD_PER_MILLION_TOKENS` (mesmo módulo), com os números já pesquisados no ADR 0001 §5. Considerado (e descartado) usar a lib `litellm` para isso — ela tem uma tabela de preço de 100+ modelos mantida pela comunidade, mas é uma dependência pesada pra um problema que se resolve em ~15 linhas com números que já tínhamos. **Modelo sem preço na tabela nunca é tratado como custo zero** — fica marcado como `cost_usd: null` e aparece destacado no relatório, pra nunca esconder um gasto real por tabela desatualizada.
+- **Relatório**: `python -m finguard.cost_report` lê o log inteiro, agrega por provider/agente/modelo, e escreve `docs/COST_REPORT.md` (arquivo gerado, não editar à mão). Rodar de novo a qualquer momento pra atualizar.
+- **Custo do Claude Code** (ferramenta de desenvolvimento) é rastreado à parte, via [`ccusage`](https://ccusage.com) (`npx ccusage@latest session --json`), que lê os logs locais do Claude Code — não tem como capturar isso de dentro do pipeline Python, é uma ferramenta externa. Snapshot manual salvo em `logs/claude_code_usage.json` (session id + custo + data de verificação), lido pelo relatório e somado ao total combinado, mas sempre com a categoria separada (custo de execução do produto vs. custo de construir o produto) — nunca soma escondido, sempre com nota explicando a diferença.
+- Atualizar `logs/claude_code_usage.json` antes da entrega final, rodando `ccusage` de novo (o número sobe conforme a sessão continua).

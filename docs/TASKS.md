@@ -28,6 +28,8 @@ Hoje: 27/07. Entrega: 30/07. Sem mais planejamento depois deste documento — a 
 
 **Regra de qualidade adicionada nesta fase**: cobertura de testes ≥ 90% obrigatória (`pyproject.toml`, `--cov-fail-under=90`), aplicada por padrão em qualquer `pytest`, mais workflow de CI em `.github/workflows/tests.yml`. Ver `SPECS.md` §9. Cobertura atual: 99%.
 
+**Rastreamento de custo adicionado nesta fase** (ver `SPECS.md` §10 e `docs/COST_REPORT.md`, gerado automaticamente por `python -m finguard.cost_report`). Nota de transparência: as ~10 chamadas reais feitas durante a validação do Nível 1 *antes* dessa instrumentação existir (os dois `--limit 5` e a verificação isolada do `REC-2026-00509`) não ficaram no log com token exato — não são perda relevante (mesmo modelo `gpt-4o-mini`, mesma ordem de grandeza de tokens do registro real capturado depois, ~700 tokens por chamada, bem abaixo de US$ 0,01 no total), mas fica registrado que o log só é completo a partir daqui.
+
 ## Backlog — Nível 2: Orquestrador (LangGraph)
 
 | # | Tarefa | Critério de aceite |

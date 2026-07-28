@@ -13,12 +13,12 @@ def get_llm_client(agent: AgentName) -> LLMClient:
         from finguard.llm.openai_client import OpenAIClient
 
         model = os.environ[f"OPENAI_MODEL_{suffix}"]
-        return OpenAIClient(model=model)
+        return OpenAIClient(model=model, agent=agent)
 
     if provider == "bedrock":
         from finguard.llm.bedrock_client import BedrockClient
 
         model_id = os.environ[f"BEDROCK_MODEL_ID_{suffix}"]
-        return BedrockClient(model_id=model_id)
+        return BedrockClient(model_id=model_id, agent=agent)
 
     raise ValueError(f"LLM_PROVIDER desconhecido: {provider!r} (use 'openai' ou 'bedrock')")
