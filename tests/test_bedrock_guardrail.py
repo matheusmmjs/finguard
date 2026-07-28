@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from finguard.guardrails.bedrock_guardrail import BedrockGuardrail, get_guardrail
+from finguard.guardrails.bedrock_guardrail import BedrockGuardrail, PassthroughGuardrail, get_guardrail
 
 
 def test_avaliar_retorna_nao_bloqueado_quando_action_none():
@@ -44,12 +44,29 @@ def test_avaliar_chama_api_com_source_correto():
         assert kwargs["guardrailVersion"] == "1"
 
 
-def test_get_guardrail_le_env_vars(monkeypatch):
+def test_get_guardrail_bedrock_le_env_vars(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "bedrock")
     monkeypatch.setenv("BEDROCK_GUARDRAIL_ID", "gr-999")
     monkeypatch.setenv("BEDROCK_GUARDRAIL_VERSION", "2")
 
     with patch("finguard.guardrails.bedrock_guardrail.boto3"):
         guardrail = get_guardrail()
 
+    assert isinstance(guardrail, BedrockGuardrail)
     assert guardrail.guardrail_id == "gr-999"
     assert guardrail.guardrail_version == "2"
+
+
+def test_get_guardrail_openai_retorna_passthrough(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+
+    guardrail = get_guardrail()
+
+    assert isinstance(guardrail, PassthroughGuardrail)
+
+
+def test_passthrough_guardrail_nunca_bloqueia_e_avisa(capsys):
+    resultado = PassthroughGuardrail().avaliar("qualquer coisa, inclusive um ataque")
+
+    assert resultado.bloqueado is False
+    assert "AVISO" in capsys.readouterr().err

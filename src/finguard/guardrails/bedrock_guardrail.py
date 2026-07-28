@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Literal
 
 import boto3
@@ -34,8 +35,26 @@ class BedrockGuardrail:
         return GuardrailResult(bloqueado=bloqueado, motivo=response.get("actionReason") if bloqueado else None)
 
 
-def get_guardrail() -> BedrockGuardrail:
-    return BedrockGuardrail(
-        guardrail_id=os.environ["BEDROCK_GUARDRAIL_ID"],
-        guardrail_version=os.environ["BEDROCK_GUARDRAIL_VERSION"],
-    )
+class PassthroughGuardrail:
+    """Sem equivalente Bedrock Guardrails na máquina pessoal (não é opcional
+    trocar por outro provider, o desafio exige Bedrock especificamente). Isso
+    NÃO bloqueia nada de verdade -- é só pra permitir rodar o resto do
+    pipeline localmente sem depender de Bedrock. Avisa em todo uso pra nunca
+    passar despercebido. A validação real (task 3.5) exige a conta Zup/Vivo."""
+
+    def avaliar(self, texto: str, source: Literal["INPUT", "OUTPUT"] = "INPUT") -> GuardrailResult:
+        print(
+            "AVISO: guardrail de entrada não avaliado de verdade (PassthroughGuardrail, "
+            "sem Bedrock nesta máquina) -- não use isso como validação de segurança.",
+            file=sys.stderr,
+        )
+        return GuardrailResult(bloqueado=False)
+
+
+def get_guardrail() -> BedrockGuardrail | PassthroughGuardrail:
+    if os.environ.get("LLM_PROVIDER", "openai") == "bedrock":
+        return BedrockGuardrail(
+            guardrail_id=os.environ["BEDROCK_GUARDRAIL_ID"],
+            guardrail_version=os.environ["BEDROCK_GUARDRAIL_VERSION"],
+        )
+    return PassthroughGuardrail()

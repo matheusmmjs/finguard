@@ -2,7 +2,7 @@ import argparse
 
 from dotenv import load_dotenv
 
-from finguard.pipeline import processar_triagem
+from finguard.pipeline import processar_completo, processar_triagem
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -26,6 +26,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Processa só as N primeiras linhas (útil pra testar sem gastar tokens à toa)",
     )
+    parser.add_argument(
+        "--so-triagem",
+        action="store_true",
+        help="Roda só o agente_triagem (Nível 1, sem RAG/risco/guardrail) -- útil pra depurar o classificador isolado",
+    )
     return parser
 
 
@@ -33,7 +38,10 @@ def main() -> None:
     load_dotenv()
     parser = build_parser()
     args = parser.parse_args()
-    processar_triagem(args.input, args.output, limit=args.limit)
+    if args.so_triagem:
+        processar_triagem(args.input, args.output, limit=args.limit)
+    else:
+        processar_completo(args.input, args.output, limit=args.limit)
 
 
 if __name__ == "__main__":
