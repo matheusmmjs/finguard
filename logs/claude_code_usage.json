@@ -1,6 +1,6 @@
 {
   "session_id": "c06d317f-47d2-4d22-882e-ef35d2ebd381",
-  "cost_usd": 8.30,
-  "checked_at": "2026-07-28T00:20:00Z",
-  "note": "Sessão de desenvolvimento do FinGuard no Claude Code, via `npx ccusage@latest session --json` filtrando pelo period/session id acima. Inclui tokens de cache (leitura/escrita), não só tokens novos. Atualizar rodando o mesmo comando de novo antes da entrega final -- número sobe conforme a sessão continua."
+  "cost_usd": 27.84,
+  "checked_at": "2026-07-28T01:28:37Z",
+  "note": "Sessão de desenvolvimento do FinGuard no Claude Code, via `npx ccusage@latest session --json` filtrando pelo period/session id acima. Inclui tokens de cache (leitura/escrita), não só tokens novos. Atualizar rodando o mesmo comando de novo antes da entrega final -- número sobe conforme a sessão continua. Subiu de $8.30 (checkpoint anterior) pra $27.84 depois de construir Nível 2 completo + Nível 3 (guardrails) nesta mesma sessão."
 }

@@ -42,7 +42,7 @@ Hoje: 27/07. Entrega: 30/07. Sem mais planejamento depois deste documento — a 
 
 ## Nível 2 — status: todas as tarefas concluídas. Pendência antes do Nível 3
 
-`run.py` (CLI) ainda chama só o pipeline do Nível 1 (`processar_triagem`, só classificação). Falta ligar o grafo completo (`graph.processar_lote` + `agente_relatorio.gerar` + `report_html.renderizar`) como o fluxo padrão da CLI, com saída em `.json` + `.html` + log de execução. Esse é o próximo passo antes de começar o Nível 3 (guardrails).
+✅ `run.py` (CLI) já chama o pipeline completo (`pipeline.processar_completo`) por padrão — `.json` + `.html` + `logs_execucao.json` + `bloqueadas.json`. `--so-triagem` mantém o caminho antigo (só Nível 1) pra depuração isolada do classificador. Validado com `python -m finguard.run --limit 5` real.
 
 **RAG (2.2a) concluído** — ver ADR 0002 e `src/finguard/rag/`. Embeddings: `text-embedding-3-small` (dev) / `amazon.titan-embed-text-v2:0` (Bedrock), índice FAISS `IndexFlatIP`. Custo por consulta: ~US$ 0,0000003 (irrelevante).
 
@@ -50,13 +50,15 @@ Hoje: 27/07. Entrega: 30/07. Sem mais planejamento depois deste documento — a 
 
 ## Backlog — Nível 3: Escudo de Compliance
 
-| # | Tarefa | Critério de aceite |
-|---|---|---|
-| 3.1 | Guardrail de entrada como primeiro nó do grafo | 100% dos ~10 casos de prompt injection identificados no dataset são bloqueados; qualquer caso que passar é documentado e o guardrail ajustado antes do evento |
-| 3.2 | Resposta de bloqueio padrão (fixa, português, sem eco da instrução, sem detalhe interno) | Testada nos mesmos casos de 3.1 |
-| 3.3 | Guardrail de saída + regex de reforço (CPF, número de conta) | Reclamação sintética de teste com CPF no texto → relatório final não contém o CPF em nenhum campo |
-| 3.4 | ADR revisado pós-implementação | ADR bate com o que foi de fato implementado, sem divergência |
-| 3.5 | Bateria de validação com `LLM_PROVIDER=bedrock` na conta do projeto (Vivo/Zup) | Mesmos casos de teste dos níveis 1–3 rodados no Bedrock; divergência de comportamento vs. baseline OpenAI documentada e prompt ajustado se necessário |
+| # | Tarefa | Critério de aceite | Status |
+|---|---|---|---|
+| 3.1 | Guardrail de entrada como primeiro nó do grafo | 100% dos ~10 casos de prompt injection identificados no dataset são bloqueados; qualquer caso que passar é documentado e o guardrail ajustado antes do evento | Código pronto e testado com mock; **critério de aceite real (bloquear os 10 casos) só valida na tarefa 3.5** |
+| 3.2 | Resposta de bloqueio padrão (fixa, português, sem eco da instrução, sem detalhe interno) | Testada nos mesmos casos de 3.1 | ✅ (testado que nunca vaza termo interno) |
+| 3.3 | Guardrail de saída + regex de reforço (CPF, número de conta) | Reclamação sintética de teste com CPF no texto → relatório final não contém o CPF em nenhum campo | ✅ |
+| 3.4 | ADR revisado pós-implementação | ADR bate com o que foi de fato implementado, sem divergência | Pendente — revisar ADR 0001/0002 depois que 3.5 validar o guardrail real |
+| 3.5 | Bateria de validação com `LLM_PROVIDER=bedrock` na conta do projeto (Vivo/Zup) | Mesmos casos de teste dos níveis 1–3 rodados no Bedrock; divergência de comportamento vs. baseline OpenAI documentada e prompt ajustado se necessário | **Pendente — só pode rodar na máquina/conta Zup. Preencher `BEDROCK_GUARDRAIL_ID` no `.env` de lá antes.** |
+
+**Sobre a máquina pessoal**: `LLM_PROVIDER=openai` usa `PassthroughGuardrail` (nunca bloqueia, avisa em todo uso) porque não existe guardrail Bedrock equivalente pra testar aqui. Isso deixa rodar o pipeline inteiro localmente pra validar JSON/HTML/logs, mas **não prova que o bloqueio de ataque funciona** — essa prova só vem da tarefa 3.5, na conta Zup/Vivo com Bedrock de verdade.
 
 ## Backlog — Pitch e demo
 

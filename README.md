@@ -41,4 +41,4 @@ python -m finguard.cost_report   # regenera docs/COST_REPORT.md a partir dos log
 
 ## Estado atual
 
-Nível 1 (classificador) completo e validado com chamada real. Nível 2 (orquestração LangGraph, RAG, agente de risco/relatório) em andamento — ver [docs/TASKS.md](docs/TASKS.md) para o backlog detalhado e status por tarefa.
+Níveis 1 e 2 completos e validados com chamada real (`python -m finguard.run`). Nível 3 (guardrails): código pronto e testado com mock, mas **validação real do bloqueio de ataque ainda pendente** — guardrail é Bedrock-obrigatório e esta máquina não tem acesso; `LLM_PROVIDER=openai` usa um `PassthroughGuardrail` que nunca bloqueia (só serve pra testar o resto do pipeline localmente). Falta rodar a bateria real na conta Zup/Vivo (`docs/TASKS.md`, tarefa 3.5) antes de considerar o Nível 3 fechado.
