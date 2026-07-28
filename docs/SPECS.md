@@ -106,15 +106,18 @@ Saída final: JSON + HTML navegável com gráfico (ex: Chart.js local ou SVG est
 
 ## 6. Grafo (LangGraph)
 
+Grafo processa **1 reclamação por vez**:
+
 ```
 _start_ → guardrail_entrada
 guardrail_entrada --[PASS]--> agente_triagem
 guardrail_entrada --[BLOCK]--> resposta_bloqueio --> __end__
 agente_triagem --> agente_risco
-agente_risco --> agente_relatorio
-agente_relatorio --> guardrail_saida
+agente_risco --> guardrail_saida
 guardrail_saida --> __end__
 ```
+
+`agente_relatorio` roda **1 vez, fora do grafo**, depois que todas as reclamações do lote passaram por ele — ele agrega estatísticas do lote inteiro (dashboard, distribuição por categoria/produto/urgência), não faz sentido como nó por-reclamação. Desvio deliberado do diagrama de exemplo do desafio, justificado em `docs/TASKS.md` (seção Nível 2).
 
 Estado do grafo carrega: `texto_original`, saída de cada agente, logs (`timestamp`, `agente`, `tempo_ms`).
 

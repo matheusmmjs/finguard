@@ -27,3 +27,13 @@
 {"timestamp": "2026-07-28T01:11:41Z", "provider": "openai", "agent": "triagem", "model": "gpt-4o-mini", "tokens_in": 643, "tokens_out": 97, "cost_usd": 0.00015465}
 {"timestamp": "2026-07-28T01:11:42Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 177, "tokens_out": 0, "cost_usd": 3.54e-06}
 {"timestamp": "2026-07-28T01:11:44Z", "provider": "openai", "agent": "risco", "model": "gpt-4o-mini", "tokens_in": 776, "tokens_out": 129, "cost_usd": 0.0001938}
+{"timestamp": "2026-07-28T01:14:36Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 1423, "tokens_out": 0, "cost_usd": 2.8460000000000002e-05}
+{"timestamp": "2026-07-28T01:14:38Z", "provider": "openai", "agent": "triagem", "model": "gpt-4o-mini", "tokens_in": 612, "tokens_out": 93, "cost_usd": 0.00014759999999999998}
+{"timestamp": "2026-07-28T01:14:38Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 146, "tokens_out": 0, "cost_usd": 2.92e-06}
+{"timestamp": "2026-07-28T01:14:41Z", "provider": "openai", "agent": "risco", "model": "gpt-4o-mini", "tokens_in": 646, "tokens_out": 129, "cost_usd": 0.0001743}
+{"timestamp": "2026-07-28T01:14:42Z", "provider": "openai", "agent": "triagem", "model": "gpt-4o-mini", "tokens_in": 646, "tokens_out": 81, "cost_usd": 0.0001455}
+{"timestamp": "2026-07-28T01:14:42Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 181, "tokens_out": 0, "cost_usd": 3.62e-06}
+{"timestamp": "2026-07-28T01:14:44Z", "provider": "openai", "agent": "risco", "model": "gpt-4o-mini", "tokens_in": 774, "tokens_out": 123, "cost_usd": 0.0001899}
+{"timestamp": "2026-07-28T01:14:46Z", "provider": "openai", "agent": "triagem", "model": "gpt-4o-mini", "tokens_in": 659, "tokens_out": 87, "cost_usd": 0.00015104999999999999}
+{"timestamp": "2026-07-28T01:14:46Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 203, "tokens_out": 0, "cost_usd": 4.06e-06}
+{"timestamp": "2026-07-28T01:14:48Z", "provider": "openai", "agent": "risco", "model": "gpt-4o-mini", "tokens_in": 664, "tokens_out": 120, "cost_usd": 0.0001716}

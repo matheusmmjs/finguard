@@ -34,13 +34,15 @@ Hoje: 27/07. Entrega: 30/07. Sem mais planejamento depois deste documento — a 
 
 | # | Tarefa | Critério de aceite |
 |---|---|---|
-| 2.1 | Grafo `start → triagem → risco → relatorio → end` (sem guardrail ainda) | Compila e roda ponta a ponta para 1 reclamação de teste |
+| 2.1 | Grafo `start → triagem → risco → end` por reclamação (sem guardrail ainda) — ver nota de desvio abaixo | Compila e roda ponta a ponta para 1 reclamação de teste |
 | 2.2a | ✅ RAG da política: chunking (15 chunks) + embeddings (dual client) + índice FAISS | Validado com chamada real: reclamação de Banco Central → seções 4.3+2.4; cartão → 3.1; seguro → 3.5; CPF/LGPD → seção 5. Todos corretos |
-| 2.2b | `agente_risco` usando o RAG acima | 5 casos de teste manuais (baixa/média/alta/crítica + 1 ambíguo) retornam `nivel_risco` e `clausula_referencia` coerentes com a política |
-| 2.3 | `agente_relatorio` (dashboard + críticas + recomendações) | Relatório `.html` + `.json` gerado a partir do dataset completo; soma por categoria bate com o total |
-| 2.4 | Logging por agente (entrada, saída, tempo) | Log mostra, por reclamação, os 3 registros de agente com timestamp e duração |
+| 2.2b | ✅ `agente_risco` usando o RAG acima | 5 casos de teste manuais (baixa/média/alta/crítica + 1 ambíguo) retornam `nivel_risco` e `clausula_referencia` coerentes com a política |
+| 2.3 | ✅ `agente_relatorio` (dashboard + críticas + recomendações) | Relatório `.html` + `.json` gerado a partir do dataset completo; soma por categoria bate com o total |
+| 2.4 | Logging por agente (entrada, saída, tempo) | Log mostra, por reclamação, os registros de agente com timestamp e duração |
 
 **RAG (2.2a) concluído** — ver ADR 0002 e `src/finguard/rag/`. Embeddings: `text-embedding-3-small` (dev) / `amazon.titan-embed-text-v2:0` (Bedrock), índice FAISS `IndexFlatIP`. Custo por consulta: ~US$ 0,0000003 (irrelevante).
+
+**Desvio deliberado do diagrama de exemplo do desafio**: o diagrama oficial (nível 2/3) mostra `agente_relatorio` como nó do grafo, depois de `agente_risco`, por reclamação. Isso não faz sentido pro que `agente_relatorio` de fato calcula — dashboard, distribuição por categoria/produto/urgência, lista de críticas — que é agregado sobre **o lote inteiro**, não sobre 1 reclamação por vez. O próprio desafio chama esse diagrama de "estrutura mínima" e diz explicitamente: "os participantes são encorajados a ir além da estrutura mínima". Decisão: o grafo LangGraph processa 1 reclamação por vez até `agente_risco`; `agente_relatorio` roda 1 vez, fora do grafo, depois que todas as reclamações do lote passaram por ele — arquitetura mais correta pro que o agente realmente faz, documentada aqui pra não parecer desvio não-intencional.
 
 ## Backlog — Nível 3: Escudo de Compliance
 
