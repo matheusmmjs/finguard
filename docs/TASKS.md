@@ -34,11 +34,15 @@ Hoje: 27/07. Entrega: 30/07. Sem mais planejamento depois deste documento — a 
 
 | # | Tarefa | Critério de aceite |
 |---|---|---|
-| 2.1 | Grafo `start → triagem → risco → end` por reclamação (sem guardrail ainda) — ver nota de desvio abaixo | Compila e roda ponta a ponta para 1 reclamação de teste |
+| 2.1 | ✅ Grafo `start → triagem → risco → end` por reclamação (sem guardrail ainda) — ver nota de desvio abaixo | Validado com LangGraph real (não fake) em 3 reclamações do dataset |
 | 2.2a | ✅ RAG da política: chunking (15 chunks) + embeddings (dual client) + índice FAISS | Validado com chamada real: reclamação de Banco Central → seções 4.3+2.4; cartão → 3.1; seguro → 3.5; CPF/LGPD → seção 5. Todos corretos |
 | 2.2b | ✅ `agente_risco` usando o RAG acima | 5 casos de teste manuais (baixa/média/alta/crítica + 1 ambíguo) retornam `nivel_risco` e `clausula_referencia` coerentes com a política |
 | 2.3 | ✅ `agente_relatorio` (dashboard + críticas + recomendações) | Relatório `.html` + `.json` gerado a partir do dataset completo; soma por categoria bate com o total |
-| 2.4 | Logging por agente (entrada, saída, tempo) | Log mostra, por reclamação, os registros de agente com timestamp e duração |
+| 2.4 | ✅ Logging por agente (entrada, saída, tempo) | Log real: 6 entradas (2 agentes x 3 reclamações), `reclamacao_id` + `timestamp` + `tempo_ms` em cada uma |
+
+## Nível 2 — status: todas as tarefas concluídas. Pendência antes do Nível 3
+
+`run.py` (CLI) ainda chama só o pipeline do Nível 1 (`processar_triagem`, só classificação). Falta ligar o grafo completo (`graph.processar_lote` + `agente_relatorio.gerar` + `report_html.renderizar`) como o fluxo padrão da CLI, com saída em `.json` + `.html` + log de execução. Esse é o próximo passo antes de começar o Nível 3 (guardrails).
 
 **RAG (2.2a) concluído** — ver ADR 0002 e `src/finguard/rag/`. Embeddings: `text-embedding-3-small` (dev) / `amazon.titan-embed-text-v2:0` (Bedrock), índice FAISS `IndexFlatIP`. Custo por consulta: ~US$ 0,0000003 (irrelevante).
 
