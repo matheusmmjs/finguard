@@ -1,6 +1,6 @@
 from typing import Literal, Protocol
 
-AgentName = Literal["triagem", "risco", "relatorio"]
+AgentName = Literal["triagem", "risco", "relatorio", "rag"]
 
 
 class LLMClient(Protocol):
