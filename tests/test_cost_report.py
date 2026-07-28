@@ -9,17 +9,24 @@ from finguard.cost_report import (
 )
 
 
+def _registro(provider="openai", agent="triagem", model="gpt-4o-mini", tokens_in=10, tokens_out=5, cost_usd=0.001):
+    return {
+        "provider": provider,
+        "agent": agent,
+        "model": model,
+        "tokens_in": tokens_in,
+        "tokens_out": tokens_out,
+        "cost_usd": cost_usd,
+    }
+
+
 def test_carregar_registros_arquivo_inexistente_retorna_lista_vazia(tmp_path):
     assert carregar_registros(tmp_path / "nao-existe.jsonl") == []
 
 
 def test_carregar_registros_le_jsonl(tmp_path):
     log_path = tmp_path / "usage.jsonl"
-    log_path.write_text(
-        json.dumps({"provider": "openai", "agent": "triagem", "model": "gpt-4o-mini", "tokens_in": 1, "tokens_out": 1, "cost_usd": 0.001})
-        + "\n",
-        encoding="utf-8",
-    )
+    log_path.write_text(json.dumps(_registro(tokens_in=1, tokens_out=1)) + "\n", encoding="utf-8")
     registros = carregar_registros(log_path)
     assert len(registros) == 1
     assert registros[0]["provider"] == "openai"
@@ -27,9 +34,11 @@ def test_carregar_registros_le_jsonl(tmp_path):
 
 def test_agregar_soma_por_grupo_e_marca_sem_preco():
     registros = [
-        {"provider": "openai", "agent": "triagem", "model": "gpt-4o-mini", "tokens_in": 100, "tokens_out": 50, "cost_usd": 0.01},
-        {"provider": "openai", "agent": "triagem", "model": "gpt-4o-mini", "tokens_in": 200, "tokens_out": 60, "cost_usd": 0.02},
-        {"provider": "bedrock", "agent": "risco", "model": "modelo-fantasma", "tokens_in": 10, "tokens_out": 5, "cost_usd": None},
+        _registro(tokens_in=100, tokens_out=50, cost_usd=0.01),
+        _registro(tokens_in=200, tokens_out=60, cost_usd=0.02),
+        _registro(
+            provider="bedrock", agent="risco", model="modelo-fantasma", tokens_in=10, tokens_out=5, cost_usd=None
+        ),
     ]
 
     grupos = agregar_por_provider_agente_modelo(registros)
@@ -106,13 +115,10 @@ def test_relatorio_flagra_chamadas_sem_preco():
 
 def test_main_le_logs_e_escreve_relatorio(tmp_path, monkeypatch, capsys):
     usage_log = tmp_path / "usage.jsonl"
-    usage_log.write_text(
-        json.dumps({"provider": "openai", "agent": "triagem", "model": "gpt-4o-mini", "tokens_in": 10, "tokens_out": 5, "cost_usd": 0.001})
-        + "\n",
-        encoding="utf-8",
-    )
+    usage_log.write_text(json.dumps(_registro()) + "\n", encoding="utf-8")
     claude_code_log = tmp_path / "cc.json"
-    claude_code_log.write_text(json.dumps({"session_id": "abc", "cost_usd": 1.0, "checked_at": "hoje"}), encoding="utf-8")
+    claude_code_payload = {"session_id": "abc", "cost_usd": 1.0, "checked_at": "hoje"}
+    claude_code_log.write_text(json.dumps(claude_code_payload), encoding="utf-8")
     report_path = tmp_path / "COST_REPORT.md"
 
     monkeypatch.setattr(cost_report, "DEFAULT_LOG_PATH", usage_log)

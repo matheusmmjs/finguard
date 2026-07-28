@@ -1,9 +1,9 @@
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class Categoria(str, Enum):
+class Categoria(StrEnum):
     COBRANCA_INDEVIDA = "Cobrança Indevida"
     ATENDIMENTO = "Atendimento"
     FRAUDE_SEGURANCA = "Fraude/Segurança"
@@ -12,7 +12,7 @@ class Categoria(str, Enum):
     OUTROS = "Outros"
 
 
-class Produto(str, Enum):
+class Produto(StrEnum):
     CARTAO_CREDITO = "Cartão de Crédito"
     CONTA_CORRENTE = "Conta Corrente"
     EMPRESTIMO = "Empréstimo"
@@ -21,21 +21,21 @@ class Produto(str, Enum):
     NAO_IDENTIFICADO = "Não Identificado"
 
 
-class Sentimento(str, Enum):
+class Sentimento(StrEnum):
     POSITIVO = "Positivo"
     NEUTRO = "Neutro"
     NEGATIVO = "Negativo"
     CRITICO = "Crítico"
 
 
-class Urgencia(str, Enum):
+class Urgencia(StrEnum):
     BAIXA = "Baixa"
     MEDIA = "Média"
     ALTA = "Alta"
     CRITICA = "Crítica"
 
 
-class NivelRisco(str, Enum):
+class NivelRisco(StrEnum):
     BAIXO = "Baixo"
     MEDIO = "Médio"
     ALTO = "Alto"
