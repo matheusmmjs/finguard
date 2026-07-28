@@ -10,7 +10,7 @@ Hoje: 27/07. Entrega: 30/07. Sem mais planejamento depois deste documento — a 
 - [x] Repo git criado, PRD/SPECS/ADR/COMPLIANCE commitados
 - [x] Modelo baseline definido (Nova Micro em todos os agentes no Bedrock; ajuste pontual depois)
 - [x] Client de LLM abstraído definido (`OpenAIClient` dev / `BedrockClient` prod)
-- [ ] Ambiente Python local configurado (venv + `requirements.txt`) — primeiro passo da implementação, ainda não feito
+- [ ] Ambiente Python local configurado (venv + `pyproject.toml`) — primeiro passo da implementação, ainda não feito
 - [ ] `OPENAI_API_KEY` pessoal disponível no `.env` local
 - [ ] Confirmação por escrito da organização sobre uso da conta de dev do projeto (não bloqueia começar a codar, mas fica pendente — ver `COMPLIANCE.md` §2)
 
@@ -18,7 +18,7 @@ Hoje: 27/07. Entrega: 30/07. Sem mais planejamento depois deste documento — a 
 
 | # | Tarefa | Critério de aceite | Status |
 |---|---|---|---|
-| 1.1 | Setup do projeto (estrutura `src/finguard/`, `requirements.txt`, `.env.example`, venv) | `python -m finguard.run --help` roda sem erro | ✅ |
+| 1.1 | Setup do projeto (estrutura `src/finguard/`, `pyproject.toml`, `.env.example`, venv) | `python -m finguard.run --help` roda sem erro | ✅ |
 | 1.2 | Schemas Pydantic de entrada/saída do `agente_triagem` (SPECS §5) | Schema rejeita valor fora do enum de categoria/produto/sentimento/urgência | ✅ |
 | 1.3 | `LLMClient` (interface) + `OpenAIClient` | Chamada de teste simples retorna resposta do modelo em `OPENAI_MODEL_TRIAGEM` | ✅ |
 | 1.4 | Prompt + lógica do `agente_triagem`, com regra dura de urgência Crítica forçada por código (fraude/Bacen/Procon/vulnerabilidade) | Rodando o exemplo do desafio + 3 casos do dataset (incluindo 1 caso Banco Central) retorna JSON no schema certo, urgência Crítica correta nos casos que exigem | ✅ |

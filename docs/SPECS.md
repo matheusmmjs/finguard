@@ -28,7 +28,7 @@ finguard/
     run.py                # CLI de entrada
   tests/
   .env.example
-  requirements.txt
+  pyproject.toml         # única fonte de dependências (runtime + [dev] opcional)
   README.md
 ```
 
@@ -61,9 +61,12 @@ Mesma assinatura nos dois — resto do código (grafo, agentes, parsing) não mu
 
 ## 4. RAG da política interna
 
+Decisão completa e alternativas descartadas em [ADR 0002](./adr/0002-rag-faiss-embeddings.html).
+
 - Fonte: `docs/KS_POLITICA_INTERNA (2).pdf` (POL-SAC-001).
 - Chunking: 1 chunk por seção numerada (2.1 a 2.4 urgência, 3.1 a 3.5 por produto, 4.1 a 4.4 por canal, 5 proteção de dados, 6 indicadores) — ~15 chunks.
-- Embeddings: Bedrock Embeddings (prod) / embedding equivalente do provedor de dev.
+- Embeddings: `text-embedding-3-small` (OpenAI, dev) / `amazon.titan-embed-text-v2:0` (Bedrock, prod) — mesmo preço, mesma abstração de client já usada pros agentes.
+- Índice: FAISS `IndexFlatIP` (busca exata, vetores normalizados) — não HNSW/IVF, que são pra escala de milhares/milhões de vetores e não fazem sentido pra ~15 chunks (ADR 0002 §2). Índice reconstruído em memória a cada execução, nunca persistido em disco/S3.
 - Retrieval: top-3 chunks mais relevantes por reclamação, injetados no prompt do `agente_risco`.
 - Saída do `agente_risco` deve incluir campo `clausula_referencia` (ex: `"2.4"`) além do parecer textual.
 

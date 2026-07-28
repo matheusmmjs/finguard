@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>ADR 0002 — FinGuard: RAG da política interna (FAISS + embeddings)</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.6; color: #1a1a2e; }
+  h1 { font-size: 1.6rem; border-bottom: 2px solid #1a1a2e; padding-bottom: .5rem; }
+  h2 { font-size: 1.2rem; margin-top: 2.5rem; color: #16213e; }
+  nav { background: #f4f4f8; border: 1px solid #ddd; border-radius: 6px; padding: 1rem 1.5rem; margin: 1.5rem 0; }
+  nav a { display: block; padding: .15rem 0; color: #1a1a2e; text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid #ccc; padding: .5rem .7rem; text-align: left; }
+  th { background: #1a1a2e; color: #fff; }
+  code { background: #f0f0f4; padding: .1rem .35rem; border-radius: 3px; font-size: .9em; }
+  .tag { display: inline-block; padding: .15rem .6rem; border-radius: 10px; font-size: .8rem; font-weight: 600; }
+  .status-accepted { background: #d1f4d0; color: #14532d; }
+  footer { margin-top: 3rem; font-size: .85rem; color: #666; border-top: 1px solid #ddd; padding-top: 1rem; }
+</style>
+</head>
+<body>
+
+<span class="tag status-accepted">Aceito</span>
+<h1 id="topo">ADR 0002 — RAG da política interna: FAISS local + embeddings</h1>
+<p>Documento: FinGuard / Future Minds 3 (Zup) · Versão: 1.0 · Data: 2026-07-28</p>
+
+<nav>
+<a href="#contexto">1. Contexto</a>
+<a href="#opcoes">2. Opções consideradas</a>
+<a href="#decisao">3. Decisão final</a>
+<a href="#consequencias">4. Consequências</a>
+<a href="#custos">5. Custo estimado</a>
+</nav>
+
+<h2 id="contexto">1. Contexto</h2>
+<p>O <code>agente_risco</code> precisa citar a seção exata da política interna (POL-SAC-001) que fundamenta cada parecer — é o núcleo do diferencial "Escudo de Compliance" (ver ADR 0001). Isso exige RAG: dado o texto de uma reclamação, recuperar a(s) seção(ões) mais relevante(s) da política antes de gerar o parecer. O corpus é a política inteira já chunkeada por seção (SPECS.md §4) — cerca de 15 chunks, cada um com algumas linhas de texto.</p>
+
+<h2 id="opcoes">2. Opções consideradas</h2>
+
+<h3>Opção A — Contexto inteiro no prompt, sem índice vetorial</h3>
+<p>Já descartada em conversa anterior a este ADR — não é "RAG" de verdade pro critério de avaliação, mesmo funcionando na prática pra um documento desse tamanho.</p>
+
+<h3>Opção B — FAISS com índice HNSW ou IVF</h3>
+<p>Índices aproximados, otimizados para milhões de vetores com baixa latência. Pesquisa de benchmark (FAISS 1.7.4, mai/2026) mostra HNSW com 0,42ms p95 e IVF com 0,83ms p95 em cargas de 10M+ vetores.</p>
+<p><strong>Rejeitada:</strong> a própria documentação do FAISS recomenda índice <code>Flat</code> (busca exata, força bruta) para bases abaixo de ~10 mil vetores — a diferença de latência entre Flat e HNSW em 15 vetores é da ordem de microssegundos, irrelevante. HNSW/IVF exigem parâmetros de tuning (M, efConstruction, nlist) que não têm papel nenhum aqui — seria complexidade adicionada sem benefício, o oposto do que o projeto pede.</p>
+
+<h3>Opção C — FAISS com índice Flat (<code>IndexFlatIP</code>) — escolhida</h3>
+<p>Busca exata por produto interno sobre vetores normalizados (equivalente a similaridade de cosseno). Sem aproximação, sem parâmetro pra ajustar, 100% local — nenhum dado sai da máquina, nenhuma dependência de serviço externo de busca.</p>
+
+<h2 id="decisao">3. Decisão final</h2>
+<p>FAISS <code>IndexFlatIP</code> sobre embeddings normalizados (L2), reconstruído em memória a cada execução a partir dos ~15 chunks da política — não precisa persistir índice em disco nem em nuvem (compatível com a regra de não usar S3). Retrieval top-3 por reclamação, injetado no prompt do <code>agente_risco</code>.</p>
+<p>Modelo de embedding segue a mesma divisão dual já estabelecida pro resto do projeto (ADR 0001): <code>text-embedding-3-small</code> (OpenAI) na máquina pessoal, <code>amazon.titan-embed-text-v2:0</code> (Bedrock) na conta do projeto Vivo/Zup. Ambos custam o mesmo (<code>$0.02</code> por milhão de tokens) e têm desempenho equivalente em benchmarks padrão (MTEB) — a escolha não é por qualidade, é por consistência com o client já abstraído.</p>
+
+<h2 id="consequencias">4. Consequências</h2>
+<ul>
+<li><strong>Positivo:</strong> zero tuning, zero parâmetro pra justificar na banca além de "é busca exata, o corpus é pequeno o bastante pra isso ser a escolha certa" — resposta simples e defensável.</li>
+<li><strong>Positivo:</strong> índice em memória, reconstruído a cada execução — sem risco de índice desatualizado se a política mudar, sem estado persistido pra gerenciar.</li>
+<li><strong>Trade-off aceito:</strong> se a política interna crescesse pra milhares de seções, `Flat` deixaria de ser a escolha certa — não é o caso aqui, e documentar isso evita que pareça que a decisão ignorou a existência de HNSW/IVF.</li>
+</ul>
+
+<h2 id="custos">5. Custo estimado</h2>
+<table>
+<tr><th>Item</th><th>Preço</th><th>Estimativa pro corpus (~15 chunks, poucos milhares de tokens)</th></tr>
+<tr><td>OpenAI <code>text-embedding-3-small</code></td><td>$0.02 / 1M tokens</td><td>&lt; $0.001 (gerado 1x por execução local, corpus pequeno)</td></tr>
+<tr><td>Bedrock Titan Embeddings V2</td><td>$0.02 / 1M tokens</td><td>&lt; $0.001</td></tr>
+</table>
+<p>Custo irrelevante frente ao custo dos agentes de LLM (ver ADR 0001 §5) — não é fator de decisão aqui, a decisão é inteiramente sobre simplicidade de arquitetura.</p>
+
+<footer>
+<p><a href="#topo">↑ voltar ao topo</a> · FinGuard — Future Minds 3 (Zup) · ver também <a href="0001-arquitetura-e-modelos.html">ADR 0001</a>, <a href="../SPECS.md">SPECS</a></p>
+</footer>
+
+</body>
+</html>
