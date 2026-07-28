@@ -4,3 +4,10 @@
 {"timestamp": "2026-07-28T00:31:49Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 16, "tokens_out": 0, "cost_usd": 3.2e-07}
 {"timestamp": "2026-07-28T00:31:50Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 13, "tokens_out": 0, "cost_usd": 2.6e-07}
 {"timestamp": "2026-07-28T00:31:50Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 12, "tokens_out": 0, "cost_usd": 2.4000000000000003e-07}
+{"timestamp": "2026-07-28T01:08:25Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 1423, "tokens_out": 0, "cost_usd": 2.8460000000000002e-05}
+{"timestamp": "2026-07-28T01:08:27Z", "provider": "openai", "agent": "triagem", "model": "gpt-4o-mini", "tokens_in": 612, "tokens_out": 93, "cost_usd": 0.00014759999999999998}
+{"timestamp": "2026-07-28T01:08:28Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 146, "tokens_out": 0, "cost_usd": 2.92e-06}
+{"timestamp": "2026-07-28T01:08:30Z", "provider": "openai", "agent": "risco", "model": "gpt-4o-mini", "tokens_in": 646, "tokens_out": 127, "cost_usd": 0.00017309999999999998}
+{"timestamp": "2026-07-28T01:08:32Z", "provider": "openai", "agent": "triagem", "model": "gpt-4o-mini", "tokens_in": 620, "tokens_out": 83, "cost_usd": 0.0001428}
+{"timestamp": "2026-07-28T01:08:32Z", "provider": "openai", "agent": "rag", "model": "text-embedding-3-small", "tokens_in": 156, "tokens_out": 0, "cost_usd": 3.12e-06}
+{"timestamp": "2026-07-28T01:08:35Z", "provider": "openai", "agent": "risco", "model": "gpt-4o-mini", "tokens_in": 680, "tokens_out": 131, "cost_usd": 0.0001806}
