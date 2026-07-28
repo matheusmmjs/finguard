@@ -72,6 +72,14 @@ class RiscoOutput(BaseModel):
     acoes_recomendadas: list[str] = Field(default_factory=list)
 
 
+class ReclamacaoProcessada(BaseModel):
+    """1 reclamação depois de passar por triagem + risco -- entrada do agente_relatorio."""
+
+    id: str
+    triagem: TriagemOutput
+    risco: RiscoOutput
+
+
 class DashboardResumo(BaseModel):
     total: int = 0
     por_categoria: dict[str, int] = Field(default_factory=dict)
