@@ -42,6 +42,11 @@ class NivelRisco(StrEnum):
     CRITICO = "Crítico"
 
 
+class GuardrailResult(BaseModel):
+    bloqueado: bool
+    motivo: str | None = None
+
+
 class ReclamacaoInput(BaseModel):
     """Uma linha do dataset fornecido pelo desafio."""
 

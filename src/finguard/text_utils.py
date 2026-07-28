@@ -49,3 +49,19 @@ def ofuscar_palavroes(texto: str) -> str:
         return word[0] + "*" * (len(word) - 1)
 
     return _PALAVRAO_RE.sub(_mask, texto)
+
+
+# Guardrail de saída (Nível 3, SPECS.md §3): camada determinística de reforço
+# além do julgamento do modelo -- nunca depende só do LLM não vazar dado.
+_CPF_RE = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
+# Heurística conservadora pra número de conta bancária (padrão agência/conta-dígito
+# comum no Brasil, ex: "12345-6"). Não é infalível -- pode dar falso positivo em
+# outro tipo de código numérico; é camada extra, não a única defesa (o guardrail
+# de entrada/saída do Bedrock é a defesa principal, isso é reforço determinístico).
+_CONTA_RE = re.compile(r"\b\d{4,8}-\d{1}\b")
+
+
+def redigir_dados_sensiveis(texto: str) -> str:
+    texto = _CPF_RE.sub("[CPF removido]", texto)
+    texto = _CONTA_RE.sub("[número de conta removido]", texto)
+    return texto

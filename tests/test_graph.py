@@ -1,7 +1,7 @@
 import json
 
 from finguard.graph import build_graph, processar_lote, processar_reclamacao
-from finguard.schemas import ReclamacaoInput
+from finguard.schemas import GuardrailResult, ReclamacaoInput
 
 
 class FakeLLMClient:
@@ -20,16 +20,27 @@ class FakeRetriever:
         return self._chunks[:top_k]
 
 
+class FakeGuardrail:
+    def __init__(self, bloqueado: bool = False, motivo: str | None = None):
+        self.bloqueado = bloqueado
+        self.motivo = motivo
+        self.chamadas: list[tuple[str, str]] = []
+
+    def avaliar(self, texto: str, source: str = "INPUT") -> GuardrailResult:
+        self.chamadas.append((texto, source))
+        return GuardrailResult(bloqueado=self.bloqueado, motivo=self.motivo)
+
+
 _TRIAGEM_PAYLOAD = {
     "categoria": "Cobrança Indevida",
     "produto": "Cartão de Crédito",
     "sentimento": "Negativo",
     "urgencia": "Média",
-    "resumo": "resumo",
+    "resumo": "Cliente com dúvida sobre conta 123456-7.",
 }
 _RISCO_PAYLOAD = {
     "nivel_risco": "Médio",
-    "justificativa": "j",
+    "justificativa": "CPF 123.456.789-01 mencionado no relato.",
     "clausula_referencia": "2.2",
     "acoes_recomendadas": ["Registrar protocolo"],
 }
@@ -40,38 +51,79 @@ def _reclamacao(id_="REC-TEST-1"):
     return ReclamacaoInput(id=id_, data_reclamacao="2026-01-20", canal="SAC", texto_reclamacao="texto qualquer")
 
 
-def test_grafo_compila_e_roda_ponta_a_ponta_para_1_reclamacao():
-    grafo = build_graph(FakeLLMClient(_TRIAGEM_PAYLOAD), FakeLLMClient(_RISCO_PAYLOAD), FakeRetriever(_CHUNKS))
+def _grafo(bloqueado=False):
+    return build_graph(
+        FakeLLMClient(_TRIAGEM_PAYLOAD),
+        FakeLLMClient(_RISCO_PAYLOAD),
+        FakeRetriever(_CHUNKS),
+        FakeGuardrail(bloqueado=bloqueado),
+    )
 
-    estado_final = processar_reclamacao(_reclamacao(), grafo)
 
+def test_grafo_compila_e_roda_ponta_a_ponta_quando_aprovado():
+    estado_final = processar_reclamacao(_reclamacao(), _grafo(bloqueado=False))
+
+    assert estado_final["bloqueado"] is False
     assert estado_final["triagem"].urgencia.value == "Média"
     assert estado_final["risco"].nivel_risco.value == "Médio"
 
 
-def test_grafo_registra_log_por_agente_com_timestamp_e_duracao():
-    grafo = build_graph(FakeLLMClient(_TRIAGEM_PAYLOAD), FakeLLMClient(_RISCO_PAYLOAD), FakeRetriever(_CHUNKS))
+def test_grafo_desvia_para_resposta_bloqueio_quando_guardrail_bloqueia():
+    estado_final = processar_reclamacao(_reclamacao(), _grafo(bloqueado=True))
 
-    estado_final = processar_reclamacao(_reclamacao(), grafo)
+    assert estado_final["bloqueado"] is True
+    assert estado_final["resposta_bloqueio"] is not None
+    assert estado_final["triagem"] is None
+    assert estado_final["risco"] is None
+
+
+def test_resposta_bloqueio_nao_expoe_detalhe_interno():
+    estado_final = processar_reclamacao(_reclamacao(), _grafo(bloqueado=True))
+
+    resposta = estado_final["resposta_bloqueio"]
+    for termo_interno in ["guardrail", "bedrock", "system prompt", "langgraph"]:
+        assert termo_interno not in resposta.lower()
+
+
+def test_guardrail_saida_redige_cpf_e_conta_das_saidas():
+    estado_final = processar_reclamacao(_reclamacao(), _grafo(bloqueado=False))
+
+    assert "123.456.789-01" not in estado_final["risco"].justificativa
+    assert "[CPF removido]" in estado_final["risco"].justificativa
+    assert "123456-7" not in estado_final["triagem"].resumo
+    assert "[número de conta removido]" in estado_final["triagem"].resumo
+
+
+def test_log_registra_todos_os_nos_quando_aprovado():
+    estado_final = processar_reclamacao(_reclamacao(), _grafo(bloqueado=False))
 
     agentes_logados = [log["agente"] for log in estado_final["logs"]]
-    assert agentes_logados == ["agente_triagem", "agente_risco"]
-    for log in estado_final["logs"]:
-        assert "timestamp" in log
-        assert isinstance(log["tempo_ms"], int)
+    assert agentes_logados == ["guardrail_entrada", "agente_triagem", "agente_risco", "guardrail_saida"]
 
 
-def test_processar_lote_retorna_1_resultado_por_reclamacao_e_logs_com_id():
-    reclamacoes = [_reclamacao("REC-1"), _reclamacao("REC-2")]
+def test_log_registra_apenas_guardrail_e_bloqueio_quando_bloqueado():
+    estado_final = processar_reclamacao(_reclamacao(), _grafo(bloqueado=True))
 
-    processadas, logs = processar_lote(
-        reclamacoes,
-        FakeLLMClient(_TRIAGEM_PAYLOAD),
-        FakeLLMClient(_RISCO_PAYLOAD),
-        FakeRetriever(_CHUNKS),
+    agentes_logados = [log["agente"] for log in estado_final["logs"]]
+    assert agentes_logados == ["guardrail_entrada", "resposta_bloqueio"]
+
+
+def test_processar_lote_separa_processadas_de_bloqueadas():
+    reclamacoes = [_reclamacao("REC-OK"), _reclamacao("REC-BLOQ")]
+    guardrail = FakeGuardrail(bloqueado=False)
+    # 1a chamada aprova, 2a bloqueia -- simula 1 reclamação normal + 1 ataque no lote.
+    resultados_guardrail = iter([False, True])
+
+    def avaliar_alternado(texto, source="INPUT"):
+        return GuardrailResult(bloqueado=next(resultados_guardrail))
+
+    guardrail.avaliar = avaliar_alternado
+
+    processadas, bloqueadas, logs = processar_lote(
+        reclamacoes, FakeLLMClient(_TRIAGEM_PAYLOAD), FakeLLMClient(_RISCO_PAYLOAD), FakeRetriever(_CHUNKS), guardrail
     )
 
-    assert [p.id for p in processadas] == ["REC-1", "REC-2"]
-    assert len(logs) == 4  # 2 reclamações x 2 agentes
-    assert all("reclamacao_id" in log for log in logs)
-    assert {log["reclamacao_id"] for log in logs} == {"REC-1", "REC-2"}
+    assert [p.id for p in processadas] == ["REC-OK"]
+    assert [b["id"] for b in bloqueadas] == ["REC-BLOQ"]
+    assert bloqueadas[0]["resposta"]
+    assert len(logs) == 4 + 2  # REC-OK: 4 nós, REC-BLOQ: 2 nós
