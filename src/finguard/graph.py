@@ -110,17 +110,26 @@ def processar_lote(
     client_risco: LLMClient,
     retriever: PolicyRetriever,
     guardrail: BedrockGuardrail,
-) -> tuple[list[ReclamacaoProcessada], list[dict], list[dict]]:
-    """Retorna (processadas, bloqueadas, logs). `bloqueadas` guarda o id e a
-    resposta educada de toda reclamação que o guardrail de entrada barrou --
-    não entra no relatório gerencial, mas não pode desaparecer sem rastro."""
+) -> tuple[list[ReclamacaoProcessada], list[dict], list[dict], list[dict]]:
+    """Retorna (processadas, bloqueadas, erros, logs). `bloqueadas` guarda o id
+    e a resposta educada de toda reclamação que o guardrail de entrada barrou.
+    `erros` guarda toda reclamação que falhou por outro motivo (ex: modelo
+    devolveu resposta que não é JSON válido) -- 1 reclamação com problema não
+    pode derrubar o processamento das outras 499 (mesmo princípio já aplicado
+    em `pipeline.processar_triagem` pro Nível 1)."""
     grafo = build_graph(client_triagem, client_risco, retriever, guardrail)
     processadas = []
     bloqueadas = []
+    erros = []
     logs_completos = []
 
     for reclamacao in reclamacoes:
-        estado_final = processar_reclamacao(reclamacao, grafo)
+        try:
+            estado_final = processar_reclamacao(reclamacao, grafo)
+        except Exception as exc:  # nosec - erro de 1 reclamação não pode derrubar o lote
+            erros.append({"id": reclamacao.id, "erro": str(exc)})
+            continue
+
         for entrada_log in estado_final["logs"]:
             logs_completos.append({"reclamacao_id": reclamacao.id, **entrada_log})
 
@@ -131,4 +140,4 @@ def processar_lote(
                 ReclamacaoProcessada(id=reclamacao.id, triagem=estado_final["triagem"], risco=estado_final["risco"])
             )
 
-    return processadas, bloqueadas, logs_completos
+    return processadas, bloqueadas, erros, logs_completos

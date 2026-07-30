@@ -60,7 +60,9 @@ def processar_completo(csv_path: str, output_dir: str, limit: int | None = None)
     retriever = PolicyRetriever(get_embedding_client())
     guardrail = get_guardrail()
 
-    processadas, bloqueadas, logs = processar_lote(reclamacoes, client_triagem, client_risco, retriever, guardrail)
+    processadas, bloqueadas, erros, logs = processar_lote(
+        reclamacoes, client_triagem, client_risco, retriever, guardrail
+    )
     relatorio = gerar(processadas)
 
     out_dir = Path(output_dir)
@@ -69,11 +71,12 @@ def processar_completo(csv_path: str, output_dir: str, limit: int | None = None)
     (out_dir / "relatorio.html").write_text(renderizar(relatorio), encoding="utf-8")
     (out_dir / "logs_execucao.json").write_text(json.dumps(logs, ensure_ascii=False, indent=2), encoding="utf-8")
     (out_dir / "bloqueadas.json").write_text(json.dumps(bloqueadas, ensure_ascii=False, indent=2), encoding="utf-8")
+    (out_dir / "erros.json").write_text(json.dumps(erros, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(
         f"Concluído: {len(reclamacoes)} reclamações, {len(processadas)} processadas, "
-        f"{len(bloqueadas)} bloqueadas pelo guardrail de entrada, {len(relatorio.criticas)} críticas. "
-        f"Saída: {out_dir}/",
+        f"{len(bloqueadas)} bloqueadas pelo guardrail de entrada, {len(erros)} com erro, "
+        f"{len(relatorio.criticas)} críticas. Saída: {out_dir}/",
         file=sys.stderr,
     )
     return out_dir / "relatorio.html"

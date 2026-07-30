@@ -119,11 +119,36 @@ def test_processar_lote_separa_processadas_de_bloqueadas():
 
     guardrail.avaliar = avaliar_alternado
 
-    processadas, bloqueadas, logs = processar_lote(
+    processadas, bloqueadas, erros, logs = processar_lote(
         reclamacoes, FakeLLMClient(_TRIAGEM_PAYLOAD), FakeLLMClient(_RISCO_PAYLOAD), FakeRetriever(_CHUNKS), guardrail
     )
 
     assert [p.id for p in processadas] == ["REC-OK"]
     assert [b["id"] for b in bloqueadas] == ["REC-BLOQ"]
     assert bloqueadas[0]["resposta"]
+    assert erros == []
     assert len(logs) == 4 + 2  # REC-OK: 4 nós, REC-BLOQ: 2 nós
+
+
+def test_processar_lote_registra_erro_de_1_reclamacao_sem_derrubar_as_outras():
+    """Regressão real: rodando o dataset completo no Bedrock, uma reclamação
+    fez o modelo devolver texto que não é JSON válido -- sem try/except por
+    item, isso derrubava o lote inteiro (500 reclamações perdidas por causa
+    de 1)."""
+    respostas = iter(["isso não é JSON válido", json.dumps(_TRIAGEM_PAYLOAD)])
+
+    class ClienteAlternado:
+        def complete(self, system, user, *, temperature=0.0):
+            return next(respostas)
+
+    processadas, bloqueadas, erros, logs = processar_lote(
+        [_reclamacao("REC-ERRO"), _reclamacao("REC-OK")],
+        ClienteAlternado(),
+        FakeLLMClient(_RISCO_PAYLOAD),
+        FakeRetriever(_CHUNKS),
+        FakeGuardrail(bloqueado=False),
+    )
+
+    assert [p.id for p in processadas] == ["REC-OK"]
+    assert [e["id"] for e in erros] == ["REC-ERRO"]
+    assert "erro" in erros[0]
