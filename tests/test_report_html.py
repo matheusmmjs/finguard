@@ -39,6 +39,25 @@ def test_relatorio_vazio_nao_quebra_e_mostra_mensagens_padrao():
     assert "Sem dados" in html_out
 
 
+def test_mostra_bloqueadas_pelo_guardrail():
+    relatorio = RelatorioOutput(dashboard=DashboardResumo(total=3))
+    bloqueadas = [{"id": "REC-ATAQUE-1", "resposta": "..."}, {"id": "REC-ATAQUE-2", "resposta": "..."}]
+
+    html_out = renderizar(relatorio, bloqueadas)
+
+    assert "REC-ATAQUE-1" in html_out
+    assert "REC-ATAQUE-2" in html_out
+    assert ">2<" in html_out  # stat "Bloqueadas"
+
+
+def test_sem_bloqueadas_mostra_mensagem_padrao():
+    relatorio = RelatorioOutput(dashboard=DashboardResumo(total=1))
+
+    html_out = renderizar(relatorio)
+
+    assert "Nenhuma tentativa de ataque bloqueada" in html_out
+
+
 def test_escapa_html_na_justificativa_para_evitar_injecao():
     relatorio = RelatorioOutput(
         dashboard=DashboardResumo(total=1),

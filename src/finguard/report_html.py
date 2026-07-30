@@ -25,6 +25,10 @@ h2 { font-size: .78rem; font-weight: 600; letter-spacing: .08em; text-transform:
 .card-clausula { font-size: .78rem; color: var(--muted); margin-bottom: .4rem; }
 .card p { margin: 0; font-size: .92rem; }
 .empty { color: var(--muted); font-size: .9rem; font-style: italic; }
+.security-note { font-size: .85rem; color: var(--muted); margin-bottom: .9rem; }
+.chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.chip { display: inline-flex; align-items: center; gap: .4rem; border: 1px solid var(--line); border-radius: 999px; padding: .35rem .8rem; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 ul.acoes { margin: 0; padding-left: 1.1rem; }
 ul.acoes li { margin: .4rem 0; font-size: .92rem; }
 footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); font-size: .78rem; color: var(--muted); }
@@ -60,6 +64,18 @@ def _cards_criticas(relatorio: RelatorioOutput) -> str:
     return f"<h2>Reclamações críticas</h2>{cards}"
 
 
+def _seguranca_bloqueadas(bloqueadas: list[dict]) -> str:
+    if not bloqueadas:
+        return '<h2>Segurança — guardrail de entrada</h2><p class="empty">Nenhuma tentativa de ataque bloqueada neste lote.</p>'
+    chips = "\n".join(f'<span class="chip"><span class="chip-dot"></span>{html.escape(b["id"])}</span>' for b in bloqueadas)
+    return (
+        "<h2>Segurança — guardrail de entrada</h2>"
+        '<p class="security-note">Bloqueadas antes de chegar a qualquer agente de IA — tentativa de '
+        "prompt injection, extração de instrução interna ou conteúdo fora do escopo de uma reclamação:</p>"
+        f'<div class="chip-row">{chips}</div>'
+    )
+
+
 def _lista_recomendacoes(relatorio: RelatorioOutput) -> str:
     if not relatorio.recomendacoes:
         return '<h2>Recomendações</h2><p class="empty">Nenhuma ação pendente.</p>'
@@ -67,7 +83,8 @@ def _lista_recomendacoes(relatorio: RelatorioOutput) -> str:
     return f'<h2>Recomendações de ação</h2><ul class="acoes">{itens}</ul>'
 
 
-def renderizar(relatorio: RelatorioOutput) -> str:
+def renderizar(relatorio: RelatorioOutput, bloqueadas: list[dict] | None = None) -> str:
+    bloqueadas = bloqueadas or []
     gerado_em = time.strftime("%d/%m/%Y às %H:%M", time.localtime())
     return f"""<!doctype html>
 <html lang="pt-br"><head><meta charset="UTF-8">
@@ -79,11 +96,13 @@ def renderizar(relatorio: RelatorioOutput) -> str:
 <div class="stats">
   <div><div class="stat-value">{relatorio.dashboard.total}</div><div class="stat-label">Processadas</div></div>
   <div><div class="stat-value">{len(relatorio.criticas)}</div><div class="stat-label">Críticas</div></div>
+  <div><div class="stat-value">{len(bloqueadas)}</div><div class="stat-label">Bloqueadas</div></div>
 </div>
 {_barras("Por urgência", relatorio.dashboard.por_urgencia)}
 {_barras("Por categoria", relatorio.dashboard.por_categoria)}
 {_barras("Por produto", relatorio.dashboard.por_produto)}
 {_cards_criticas(relatorio)}
+{_seguranca_bloqueadas(bloqueadas)}
 {_lista_recomendacoes(relatorio)}
 <footer>Gerado em {gerado_em}</footer>
 </body></html>
