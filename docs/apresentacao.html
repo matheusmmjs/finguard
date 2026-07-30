@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>FinGuard — Apresentação</title>
+<title>FinGuard: Apresentação</title>
 <style>
 :root {
   --ink: #181a1f;
@@ -101,13 +101,13 @@ svg.diagram { max-width: 640px; width: 100%; height: auto; margin-top: 1.5rem; }
 <section class="slide slide-title">
   <div class="kicker">Future Minds 3 · Trilha Zup</div>
   <h1>FinGuard</h1>
-  <p class="lede muted">Escudo de Compliance e Risco Regulatório — não é mais um roteador de reclamação, é proteção contra multa, vazamento e ataque ao próprio sistema de IA.</p>
+  <p class="lede muted">Escudo de Compliance e Risco Regulatório. Não é mais um roteador de reclamação, é proteção contra multa, vazamento e ataque ao próprio sistema de IA.</p>
 </section>
 
 <section class="slide">
   <div class="kicker">01 · O problema</div>
   <h2>Erro de escalonamento custa mais caro que demora.</h2>
-  <p class="lede">Instituições financeiras recebem milhares de reclamações por dia, em texto livre, sem padronização. O risco real não é a lentidão — é uma reclamação com indício de fraude ou já registrada no Banco Central que não vira ação crítica na hora. Isso gera multa regulatória, dano de imagem e violação de LGPD.</p>
+  <p class="lede">Instituições financeiras recebem milhares de reclamações por dia, em texto livre, sem padronização. O risco real não é a lentidão. É uma reclamação com indício de fraude ou já registrada no Banco Central que não vira ação crítica na hora. Isso gera multa regulatória, dano de imagem e violação de LGPD.</p>
   <div class="chip-row">
     <span class="tag">SAC</span><span class="tag">Ouvidoria</span><span class="tag">Redes Sociais</span><span class="tag">Banco Central</span><span class="tag">Procon</span>
   </div>
@@ -116,11 +116,11 @@ svg.diagram { max-width: 640px; width: 100%; height: auto; margin-top: 1.5rem; }
 <section class="slide">
   <div class="kicker">02 · O diferencial</div>
   <h2>Um segundo risco que ninguém mais vai mostrar: o próprio sistema sendo atacado.</h2>
-  <p class="lede muted">O dataset do desafio contém tentativas reais de prompt injection. O FinGuard bloqueia isso ao vivo, na conta real da Zup — não é teoria.</p>
+  <p class="lede muted">O dataset do desafio contém tentativas reais de prompt injection. O FinGuard bloqueia isso ao vivo, na conta real da Zup. Não é teoria.</p>
   <div class="grid3">
     <div class="pillar"><h3>Defesa ativa</h3><p>Guardrail Bedrock como primeiro nó do grafo. Nenhuma reclamação chega a um agente sem passar por ele.</p></div>
     <div class="pillar"><h3>Escalonamento correto</h3><p>Regra determinística: canal Banco Central/Procon ou indício de fraude força urgência Crítica, sem depender do julgamento do modelo.</p></div>
-    <div class="pillar"><h3>Decisão auditável</h3><p>O parecer de risco cita a cláusula exata da política interna — nunca um rótulo sem justificativa.</p></div>
+    <div class="pillar"><h3>Decisão auditável</h3><p>O parecer de risco cita a cláusula exata da política interna, nunca um rótulo sem justificativa.</p></div>
   </div>
 </section>
 
@@ -178,10 +178,10 @@ svg.diagram { max-width: 640px; width: 100%; height: auto; margin-top: 1.5rem; }
 
 <section class="slide">
   <div class="kicker">04 · Código real</div>
-  <h2>Quando a política já define a resposta certa, o código decide — não o modelo.</h2>
+  <h2>Quando a política já define a resposta certa, o código decide, não o modelo.</h2>
   <div class="two-col">
     <div>
-      <p class="lede">Achado durante a validação real: a citação da cláusula variava conforme o que a busca semântica (RAG) recuperava pra cada texto — um caso Crítico podia citar a seção errada. Corrigido com mapeamento fixo, não mais sujeito ao retrieval.</p>
+      <p class="lede">Achado durante a validação real: a citação da cláusula variava conforme o que a busca semântica (RAG) recuperava pra cada texto: um caso Crítico podia citar a seção errada. Corrigido com mapeamento fixo, não mais sujeito ao retrieval.</p>
       <code class="block"><span class="cm"># src/finguard/agents/risco.py</span>
 _NIVEL_RISCO_PARA_CLAUSULA = {
     NivelRisco.BAIXO: <span class="str">"2.1"</span>,
@@ -195,7 +195,7 @@ _NIVEL_RISCO_PARA_CLAUSULA = {
 )</code>
     </div>
     <div>
-      <p class="lede muted" style="font-size:.95rem;">O RAG continua fundamentando <em>por que</em> (justificativa) e <em>o que fazer</em> (ações recomendadas) — só a citação numérica virou determinística.</p>
+      <p class="lede muted" style="font-size:.95rem;">O RAG continua fundamentando <em>por que</em> (justificativa) e <em>o que fazer</em> (ações recomendadas). Só a citação numérica virou determinística.</p>
     </div>
   </div>
 </section>
@@ -208,7 +208,7 @@ _NIVEL_RISCO_PARA_CLAUSULA = {
     <tr><td>Triagem</td><td>Nova Micro</td><td class="num">$0.035/M</td><td class="num">$0.14/M</td><td>Classificação simples, custo mínimo</td></tr>
     <tr><td>Risco</td><td>DeepSeek V3.2</td><td class="num">$0.62/M</td><td class="num">$1.85/M</td><td>Raciocínio forte, ~40-63% mais barato que Claude Haiku</td></tr>
     <tr><td>Relatório</td><td>Nova Micro</td><td class="num">$0.035/M</td><td class="num">$0.14/M</td><td>Agregação, baixo raciocínio</td></tr>
-    <tr><td>RAG</td><td>Titan Embeddings V2</td><td class="num">$0.02/M</td><td class="num">—</td><td>FAISS local, busca exata (~15 seções)</td></tr>
+    <tr><td>RAG</td><td>Titan Embeddings V2</td><td class="num">$0.02/M</td><td class="num">N/D</td><td>FAISS local, busca exata (~15 seções)</td></tr>
     <tr><td>Guardrail</td><td>Bedrock Guardrails</td><td colspan="2">por conteúdo avaliado</td><td>Prompt Attacks + Denied Topics + PII</td></tr>
   </table>
 </section>
@@ -223,7 +223,7 @@ _NIVEL_RISCO_PARA_CLAUSULA = {
     </div>
     <div class="card">
       <h4>Em aberto</h4>
-      <p>2 casos de extração disfarçada de pedido legítimo (auditoria, pentest) ainda sem bloqueio confirmado. Mitigação estrutural: nenhum agente tem acesso a dado de outro cliente — um miss de guardrail não vaza dado real.</p>
+      <p>2 casos de extração disfarçada de pedido legítimo (auditoria, pentest) ainda sem bloqueio confirmado. Mitigação estrutural: nenhum agente tem acesso a dado de outro cliente. Um miss de guardrail não vaza dado real.</p>
     </div>
   </div>
 </section>
@@ -265,18 +265,18 @@ _NIVEL_RISCO_PARA_CLAUSULA = {
   <div class="honest-grid" style="grid-template-columns: 1fr 1fr 1fr; max-width: 68rem;">
     <div class="card">
       <h4>FAISS: Flat, não HNSW</h4>
-      <p>Benchmark real (FAISS 1.7.4, mai/2026): HNSW vence em latência (0.42ms p95) só a partir de milhões de vetores. Nossa política tem ~15 seções — a própria documentação do FAISS recomenda índice exato (Flat) abaixo de 10 mil vetores. HNSW aqui seria tuning sem benefício.</p>
+      <p>Benchmark real (FAISS 1.7.4, mai/2026): HNSW vence em latência (0.42ms p95) só a partir de milhões de vetores. Nossa política tem ~15 seções, e a própria documentação do FAISS recomenda índice exato (Flat) abaixo de 10 mil vetores. HNSW aqui seria tuning sem benefício.</p>
     </div>
     <div class="card">
       <h4>Embeddings: o mais barato já basta</h4>
-      <p>Pesquisamos MTEB-BR (benchmark de embeddings em português, 2026): ranking multilíngue genérico só prediz moderadamente o ranking em português (correlação 0.75). Mas o corpus é pequeno e simples — não exige o embedding mais sofisticado. Titan V2 / text-embedding-3-small, ambos a $0.02 por milhão de tokens, bastam.</p>
+      <p>Pesquisamos MTEB-BR (benchmark de embeddings em português, 2026): ranking multilíngue genérico só prediz moderadamente o ranking em português (correlação 0.75). Mas o corpus é pequeno e simples, não exige o embedding mais sofisticado. Titan V2 / text-embedding-3-small, ambos a $0.02 por milhão de tokens, bastam.</p>
     </div>
     <div class="card">
       <h4>litellm: avaliado e descartado</h4>
       <p>Resolveria custo/preço por token pronto, com tabela de 100+ modelos mantida pela comunidade. Descartado: dependência pesada pra um problema que se resolve em ~15 linhas com os números que já tínhamos pesquisado.</p>
     </div>
   </div>
-  <p class="lede muted" style="margin-top: 2rem; font-size: .95rem;">Mesmo critério em toda decisão técnica do projeto: pesquisar antes, documentar a alternativa descartada — não só a escolhida (ver ADR 0001 e 0002, navegáveis, no repositório).</p>
+  <p class="lede muted" style="margin-top: 2rem; font-size: .95rem;">Mesmo critério em toda decisão técnica do projeto: pesquisar antes, documentar a alternativa descartada, não só a escolhida (ver ADR 0001 e 0002, navegáveis, no repositório).</p>
 </section>
 
 <section class="slide slide-title">
