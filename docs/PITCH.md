@@ -17,6 +17,8 @@ Baseado em `PRD.md`, `SPECS.md`, `ADR 0001/0002`, `TASKS.md`. Fala natural, não
 
 ---
 
+**Diagrama de sequência pra usar no slide**: [docs/diagrama-sequencia.svg](./diagrama-sequencia.svg)
+
 ## 0:40 – 2:00 — Arquitetura (rápido, sem ler slide)
 
 > "Grafo LangGraph: guardrail de entrada primeiro — nenhuma reclamação passa sem checar. Se aprovado: agente de triagem classifica, agente de risco consulta a política interna via RAG (FAISS, busca exata, ~15 seções) e **cita a cláusula exata** que justifica o risco — não é só um rótulo, é uma decisão auditável. Depois guardrail de saída garante que CPF e número de conta nunca aparecem no relatório final."
