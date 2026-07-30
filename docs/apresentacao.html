@@ -194,7 +194,17 @@ _NIVEL_RISCO_PARA_CLAUSULA = {
 </section>
 
 <section class="slide">
-  <div class="kicker">05 · Ferramentas de IA</div>
+  <div class="kicker">05 · Escalonamento correto</div>
+  <h2>RAG acha o contexto. Regra decide o que a política já definiu.</h2>
+  <div class="grid3">
+    <div class="pillar"><h3>O que o RAG faz</h3><p>Busca semântica (embeddings + FAISS) compara o texto da reclamação com as ~15 seções da política e traz as 3 mais parecidas. Roda em toda chamada, sempre.</p></div>
+    <div class="pillar"><h3>Onde ele falha</h3><p>Busca por similaridade não garante achar a seção que define o nível de risco. Num caso Crítico real, o RAG trouxe as seções 3.3, 3.4 e 2.3. A seção 2.4, que define "Crítico", nem apareceu.</p></div>
+    <div class="pillar"><h3>Por isso é regra fixa</h3><p>Nível de risco só tem 4 valores possíveis, e a política já diz qual seção define cada um. Resposta única e conhecida não deveria depender de busca aproximada. RAG continua decidindo o "porquê" e o "o que fazer".</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">06 · Ferramentas de IA</div>
   <h2>Modelo certo pra cada tarefa, custo sempre justificado.</h2>
   <table class="model-table">
     <tr><th>Agente</th><th>Modelo</th><th>Input</th><th>Output</th><th>Por quê</th></tr>
@@ -207,7 +217,37 @@ _NIVEL_RISCO_PARA_CLAUSULA = {
 </section>
 
 <section class="slide">
-  <div class="kicker">06 · Segurança, com honestidade</div>
+  <div class="kicker">07 · Provocação</div>
+  <h2>Temos resiliência de modelo? Não. Temos outras.</h2>
+  <div class="honest-grid">
+    <div class="card">
+      <h4>O que não temos</h4>
+      <p>Fallback automático entre modelos. Se o DeepSeek falhar ou ficar indisponível, o sistema não troca sozinho pra outro provedor. Decisão consciente: adicionar isso agora, sob prazo curto, seria mais risco de bug novo do que proteção real.</p>
+    </div>
+    <div class="card">
+      <h4>O que temos</h4>
+      <p>Resiliência de lote: 1 reclamação com erro não derruba as outras 499, fica registrada à parte. Limite de <code>max_tokens</code> em toda chamada. Guardrail em duas camadas independentes (Bedrock + regex determinístico), nenhuma delas sozinha é a única defesa.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">08 · Provocação</div>
+  <h2>Pronto pra produção real? Ainda não. Aqui está a lista.</h2>
+  <div class="honest-grid">
+    <div class="card">
+      <h4>O que falta</h4>
+      <p>Fallback e retry entre modelos, fila de processamento em vez de lote em CSV, observabilidade de verdade (alertas, não só arquivo de log), segredo gerenciado (não <code>.env</code>), autenticação, UI de aprovação humana antes de qualquer ação real, teste de carga.</p>
+    </div>
+    <div class="card">
+      <h4>O que já fizemos bem</h4>
+      <p>Client de LLM abstraído (troca de modelo é 1 variável de ambiente), custo rastreado automaticamente, 88 testes e 99% de cobertura, CI em todo commit, ADR documentando cada decisão, regra dura onde a política já decide, guardrail em camadas, resiliência de lote.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">09 · Segurança, com honestidade</div>
   <h2>Bloqueamos a maioria dos ataques. Não escondemos os que faltam.</h2>
   <div class="honest-grid">
     <div class="card">
@@ -222,7 +262,7 @@ _NIVEL_RISCO_PARA_CLAUSULA = {
 </section>
 
 <section class="slide">
-  <div class="kicker">07 · Governança</div>
+  <div class="kicker">10 · Governança</div>
   <h2>IA decide triagem. Humano decide execução.</h2>
   <div class="grid2">
     <div class="card">
@@ -237,7 +277,7 @@ _NIVEL_RISCO_PARA_CLAUSULA = {
 </section>
 
 <section class="slide">
-  <div class="kicker">08 · Números</div>
+  <div class="kicker">11 · Números</div>
   <h2>Testado, não só demonstrado.</h2>
   <div class="stat-row">
     <div><div class="stat-value">89</div><div class="stat-label">testes automatizados</div></div>
@@ -253,7 +293,7 @@ _NIVEL_RISCO_PARA_CLAUSULA = {
 </section>
 
 <section class="slide">
-  <div class="kicker">09 · Pesquisa e decisões descartadas</div>
+  <div class="kicker">12 · Pesquisa e decisões descartadas</div>
   <h2>O que pesquisamos, testamos e por que não usamos.</h2>
   <div class="honest-grid" style="grid-template-columns: 1fr 1fr 1fr; max-width: 68rem;">
     <div class="card">
