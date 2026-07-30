@@ -33,6 +33,7 @@
 <a href="#consequencias">4. Consequências e trade-offs</a>
 <a href="#custos">5. Análise de custos estimada</a>
 <a href="#seguranca">6. Recomendações de segurança</a>
+<a href="#pos-implementacao">7. Atualização pós-implementação</a>
 </nav>
 
 <h2 id="contexto">1. Contexto do problema</h2>
@@ -94,6 +95,21 @@
 <li>Resposta de bloqueio nunca deve ecoar ou explicar a instrução maliciosa recebida, nem revelar detalhe de configuração interna (mensagem fixa, genérica, em português).</li>
 <li>Logs de execução não devem persistir o texto original da reclamação além do necessário para a demo — evitar reter dado (mesmo fictício) além do escopo do desafio, seguindo o espírito da política de dados do POL-SAC-001 (seção 5).</li>
 <li>Todo recurso de nuvem que gera custo (guardrail, se criado especificamente para o desafio) deve ser desprovisionado imediatamente após o evento, conforme regra de compromisso do desafio.</li>
+</ul>
+
+<h2 id="pos-implementacao">7. Atualização pós-implementação (validação real, tarefa 3.4/3.5)</h2>
+<p>Esta seção registra o que a validação real na conta AWS do projeto Vivo/Zup mudou em relação ao que este ADR previa — decisão consciente de manter o histórico em vez de reescrever silenciosamente, para a banca poder ver o raciocínio real, não só o resultado final.</p>
+<ul>
+<li><strong>Guardrail Bedrock precisou de ajuste manual.</strong> Um guardrail criado sem configuração explícita de <em>Prompt Attacks</em> não bloqueou nenhum dos ~10 casos de prompt injection do dataset (<code>action: NONE</code> em todos). Habilitar o filtro <em>Prompt Attacks</em> (força High) resolveu o caso clássico de jailbreak por persona, mas não os pedidos de extração disfarçados de legítimos (auditoria, documentação, pentest). Foi necessário adicionar um <strong>Denied Topic</strong> customizado ("extração de configuração interna") com exemplos tirados diretamente do dataset. Aprendizado: guardrail do Bedrock não vem pronto pra esse tipo de ataque só por existir — precisa configuração deliberada, testada contra casos reais.</li>
+<li><strong>Resultado real: maioria dos ataques bloqueada, 2 casos ainda não confirmados</strong> (<code>REC-2026-00413</code> e mais um) — aceito como risco conhecido e documentado (ver <code>docs/TASKS.md</code>, tarefa 3.1), não escondido. Mitigação estrutural: os agentes não têm nenhuma ferramenta de acesso a dado de outro cliente — mesmo um miss de guardrail não resulta em vazamento real de dado, porque o sistema nunca teve essa capacidade.</li>
+<li><strong><code>PassthroughGuardrail</code> adicionado</strong> para desenvolvimento na máquina pessoal (sem acesso a Bedrock) — nunca bloqueia, avisa alto em todo uso, existe só pra permitir testar o resto do pipeline localmente sem depender de Bedrock. Só o <code>BedrockGuardrail</code> real conta para fins de avaliação.</li>
+<li><strong>3 bugs reais encontrados durante a validação no Bedrock, todos corrigidos:</strong>
+  <ol>
+    <li>1 reclamação com resposta malformada (não-JSON) derrubava o processamento do lote inteiro — faltava tratamento de erro por item no orquestrador do grafo.</li>
+    <li>Nenhum dos dois clients de LLM tinha limite de <code>max_tokens</code> configurado — corrigido (600 tokens, com folga sobre o observado em produção real de 80-130 tokens de saída).</li>
+    <li><code>agente_risco</code> citava a seção de produto (procedimento, ex: 3.3) em vez da seção de urgência/canal (o motivo do risco, ex: 2.x/4.x) em pelo menos 1 caso real — corrigido com regra de preferência explícita no prompt e reforçada com regra dura no código.</li>
+  </ol>
+</li>
 </ul>
 
 <footer>

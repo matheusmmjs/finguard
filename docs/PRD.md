@@ -2,6 +2,12 @@
 
 PRD do desafio Future Minds 3 (Zup), trilha Zup. Entrega: 30/07/2026. Alvo: Nível 3.
 
+## Status de implementação (atualizado 28/07)
+
+**Níveis 1, 2 e 3 implementados e validados com chamada real**, tanto em desenvolvimento (OpenAI) quanto na conta Bedrock do projeto (Vivo/Zup). Pipeline completo — guardrail de entrada → triagem → risco (RAG com citação de cláusula) → guardrail de saída → relatório — funciona ponta a ponta via `python -m finguard.run`.
+
+**Honesto sobre o que não está 100%**: o guardrail de entrada bloqueia a maioria dos ~10 casos de prompt injection do dataset, mas 2 ainda não têm bloqueio confirmado (ver `docs/TASKS.md`, tarefa 3.1, e ADR 0001 §7 pra a história completa de como chegamos até aqui). Mitigação estrutural: os agentes não têm nenhuma capacidade de acessar dado de cliente além da reclamação que estão processando — mesmo um guardrail incompleto não resulta em vazamento real. Documentar isso na apresentação é mais forte que esconder.
+
 ## 1. Problema
 
 Instituições financeiras recebem milhares de reclamações por dia, em múltiplos canais (SAC, Ouvidoria, Redes Sociais, Banco Central, Procon), em texto livre, sem padronização. Hoje a triagem é manual, lenta e inconsistente. Reclamações com indício de fraude ou violação regulatória precisam ser escaladas para compliance — e um erro de escalonamento custa multa regulatória, dano de imagem ou vazamento de dado (LGPD).

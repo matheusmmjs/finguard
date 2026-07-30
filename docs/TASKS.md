@@ -52,11 +52,16 @@ Hoje: 27/07. Entrega: 30/07. Sem mais planejamento depois deste documento — a 
 
 | # | Tarefa | Critério de aceite | Status |
 |---|---|---|---|
-| 3.1 | Guardrail de entrada como primeiro nó do grafo | 100% dos ~10 casos de prompt injection identificados no dataset são bloqueados; qualquer caso que passar é documentado e o guardrail ajustado antes do evento | Código pronto e testado com mock; **critério de aceite real (bloquear os 10 casos) só valida na tarefa 3.5** |
+| 3.1 | Guardrail de entrada como primeiro nó do grafo | 100% dos ~10 casos de prompt injection identificados no dataset são bloqueados; qualquer caso que passar é documentado e o guardrail ajustado antes do evento | ⚠️ Código pronto. Validado na conta Zup/Vivo: guardrail inicial (só Prompt Attacks) bloqueou 1/10; depois de adicionar Denied Topic específico pra extração de instrução, bloqueou a maioria — **2/10 casos ainda não confirmados bloqueados** (`REC-2026-00413` e mais 1). Aceito como risco conhecido e documentado, não escondido — mitigado pelo fato de os agentes não terem nenhuma capacidade de acessar dado de outro cliente (ver COMPLIANCE.md), então mesmo um miss não vaza dado real. |
 | 3.2 | Resposta de bloqueio padrão (fixa, português, sem eco da instrução, sem detalhe interno) | Testada nos mesmos casos de 3.1 | ✅ (testado que nunca vaza termo interno) |
-| 3.3 | Guardrail de saída + regex de reforço (CPF, número de conta) | Reclamação sintética de teste com CPF no texto → relatório final não contém o CPF em nenhum campo | ✅ |
-| 3.4 | ADR revisado pós-implementação | ADR bate com o que foi de fato implementado, sem divergência | Pendente — revisar ADR 0001/0002 depois que 3.5 validar o guardrail real |
-| 3.5 | Bateria de validação com `LLM_PROVIDER=bedrock` na conta do projeto (Vivo/Zup) | Mesmos casos de teste dos níveis 1–3 rodados no Bedrock; divergência de comportamento vs. baseline OpenAI documentada e prompt ajustado se necessário | **Pendente — só pode rodar na máquina/conta Zup. Preencher `BEDROCK_GUARDRAIL_ID` no `.env` de lá antes.** |
+| 3.3 | Guardrail de saída + regex de reforço (CPF, número de conta) | Reclamação sintética de teste com CPF no texto → relatório final não contém o CPF em nenhum campo | ✅ regex sempre ativo; Bedrock Sensitive Information Filters (Mask) configurado no guardrail novo como reforço adicional |
+| 3.4 | ADR revisado pós-implementação | ADR bate com o que foi de fato implementado, sem divergência | ✅ ver ADR 0001, seção "Atualização pós-implementação" |
+| 3.5 | Bateria de validação com `LLM_PROVIDER=bedrock` na conta do projeto (Vivo/Zup) | Mesmos casos de teste dos níveis 1–3 rodados no Bedrock; divergência de comportamento vs. baseline OpenAI documentada e prompt ajustado se necessário | ✅ rodado. 3 bugs reais achados e corrigidos nessa validação: (1) 1 reclamação com erro derrubava o lote inteiro (sem try/except por item), (2) sem limite de `max_tokens` nos dois LLM clients, (3) `agente_risco` citava seção de produto (3.x) em vez de urgência/canal (2.x/4.x) numa reclamação real. Todos corrigidos e re-testados. |
+
+**Gaps conhecidos, não fechados por falta de tempo (eventos de hoje) — registrar na apresentação se perguntado:**
+- Content filters padrão do Bedrock (Hate/Violence/Insults/Sexual/Misconduct) não confirmados habilitados — cobrem "ameaça a pessoas/instituições", hoje sem defesa confirmada além do que o modelo já recusaria por conta própria.
+- Nenhum Denied Topic específico pra "conteúdo que não é reclamação válida" (ex: pedido fora de escopo bancário) — não testado.
+- Tom profissional/neutro da saída não tem verificação automatizada, só instrução de prompt.
 
 **Sobre a máquina pessoal**: `LLM_PROVIDER=openai` usa `PassthroughGuardrail` (nunca bloqueia, avisa em todo uso) porque não existe guardrail Bedrock equivalente pra testar aqui. Isso deixa rodar o pipeline inteiro localmente pra validar JSON/HTML/logs, mas **não prova que o bloqueio de ataque funciona** — essa prova só vem da tarefa 3.5, na conta Zup/Vivo com Bedrock de verdade.
 
