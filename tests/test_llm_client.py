@@ -32,6 +32,21 @@ def test_openai_client_complete_returns_model_text(tmp_path):
         assert result == "oi, tudo bem?"
         _, kwargs = instance.chat.completions.create.call_args
         assert kwargs["model"] == "gpt-4o-mini"
+        assert kwargs["max_tokens"] == 600
+
+
+def test_openai_client_max_tokens_customizavel(tmp_path):
+    with patch("finguard.llm.openai_client.OpenAI") as MockOpenAI:
+        instance = MockOpenAI.return_value
+        instance.chat.completions.create.return_value = _fake_openai_response("ok")
+
+        client = OpenAIClient(
+            model="gpt-4o-mini", agent="triagem", api_key="test-key", log_path=tmp_path / "usage.jsonl"
+        )
+        client.complete(system="sys", user="user", max_tokens=100)
+
+        _, kwargs = instance.chat.completions.create.call_args
+        assert kwargs["max_tokens"] == 100
 
 
 def test_openai_client_registra_custo_no_log(tmp_path):
@@ -117,7 +132,7 @@ def test_bedrock_client_complete_returns_model_text_and_registra_custo(tmp_path)
         assert result == "resposta do bedrock"
         _, kwargs = mock_runtime.converse.call_args
         assert kwargs["modelId"] == "amazon.nova-micro-v1:0"
-        assert kwargs["inferenceConfig"] == {"temperature": 0.2}
+        assert kwargs["inferenceConfig"] == {"temperature": 0.2, "maxTokens": 600}
 
     registro = json.loads(log_path.read_text(encoding="utf-8").strip())
     assert registro["provider"] == "bedrock"

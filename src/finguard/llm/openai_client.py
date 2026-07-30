@@ -22,10 +22,11 @@ class OpenAIClient:
         self.log_path = log_path
         self._client = OpenAI(api_key=api_key or os.environ["OPENAI_API_KEY"])
 
-    def complete(self, system: str, user: str, *, temperature: float = 0.0) -> str:
+    def complete(self, system: str, user: str, *, temperature: float = 0.0, max_tokens: int = 600) -> str:
         response = self._client.chat.completions.create(
             model=self.model,
             temperature=temperature,
+            max_tokens=max_tokens,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},

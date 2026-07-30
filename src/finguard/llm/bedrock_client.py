@@ -29,12 +29,12 @@ class BedrockClient:
             region_name=region or os.environ.get("AWS_REGION"),
         )
 
-    def complete(self, system: str, user: str, *, temperature: float = 0.0) -> str:
+    def complete(self, system: str, user: str, *, temperature: float = 0.0, max_tokens: int = 600) -> str:
         response = self._client.converse(
             modelId=self.model_id,
             system=[{"text": system}],
             messages=[{"role": "user", "content": [{"text": user}]}],
-            inferenceConfig={"temperature": temperature},
+            inferenceConfig={"temperature": temperature, "maxTokens": max_tokens},
         )
 
         usage = response.get("usage")
