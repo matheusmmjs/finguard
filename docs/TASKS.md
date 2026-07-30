@@ -70,7 +70,7 @@ Hoje: 27/07. Entrega: 30/07. Sem mais planejamento depois deste documento — a 
 | # | Tarefa | Critério de aceite |
 |---|---|---|
 | P.1 | Roteiro de pitch (5 min) com 1 caso de injection para rodar ao vivo | Ensaiado, cronometrado, cabe em 5 min |
-| P.2 | Resposta pronta para a pergunta obrigatória da banca ("quais ferramentas de IA você usou e como contribuíram") | Resposta escrita cobrindo Bedrock Guardrails, RAG, LangGraph, Nova Micro/Claude Haiku |
+| P.2 | Resposta pronta para a pergunta obrigatória da banca ("quais ferramentas de IA você usou e como contribuíram") | Resposta escrita cobrindo Bedrock Guardrails, RAG, LangGraph, Nova Micro/DeepSeek V3.2 |
 | P.3 | Checklist do dia do evento | Inclui: gerar relatório final antes de desligar, deletar Guardrail/recursos da conta AWS ao término (ver `COMPLIANCE.md` §3) |
 
 ## Definition of Done (DoD)

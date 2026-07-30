@@ -16,6 +16,9 @@ PRICING_USD_PER_MILLION_TOKENS = {
         "amazon.nova-pro-v1:0": (0.80, 3.20),
         "anthropic.claude-haiku-4-5": (1.00, 5.00),
         "amazon.titan-embed-text-v2:0": (0.02, 0.0),
+        # Escolhido pra agente_risco na entrega real (ver ADR 0001 §5) -- mais
+        # barato que Claude Haiku (0.62/1.85 vs 1.00/5.00), preço US East/West.
+        "deepseek.v3-2": (0.62, 1.85),
     },
 }
 

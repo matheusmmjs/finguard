@@ -21,7 +21,7 @@ Baseado em `PRD.md`, `SPECS.md`, `ADR 0001/0002`, `TASKS.md`. Fala natural, não
 
 > "Grafo LangGraph: guardrail de entrada primeiro — nenhuma reclamação passa sem checar. Se aprovado: agente de triagem classifica, agente de risco consulta a política interna via RAG (FAISS, busca exata, ~15 seções) e **cita a cláusula exata** que justifica o risco — não é só um rótulo, é uma decisão auditável. Depois guardrail de saída garante que CPF e número de conta nunca aparecem no relatório final."
 
-**Não esquecer de citar**: dois modelos diferentes por custo — Nova Micro pra classificação (barato, rápido), Claude Haiku pro agente de risco (mais caro, mas é onde citar a cláusula errada custa caro de verdade).
+**Não esquecer de citar**: dois modelos diferentes por custo — Nova Micro pra classificação (barato, rápido), DeepSeek V3.2 pro agente de risco (mais robusto, é onde citar a cláusula errada custa caro de verdade — e ainda assim ~40-60% mais barato que Claude Haiku pra raciocínio equivalente).
 
 ---
 
@@ -69,7 +69,10 @@ print('BLOQUEADO' if r.bloqueado else 'passou', '|', r.motivo)
 ## Perguntas prováveis da banca (respostas prontas)
 
 **"Quais ferramentas de IA você usou e como elas contribuíram?"** (pergunta obrigatória)
-> Bedrock Guardrails pro bloqueio de ataque, Amazon Nova Micro pra classificação barata, Claude Haiku pro agente de risco onde precisão importa mais que custo, FAISS + Titan Embeddings pro RAG na política interna, LangGraph pra orquestrar o fluxo com rastreabilidade por nó, GitHub Copilot/Claude Code pra acelerar o desenvolvimento. Cada um resolveu um problema específico, documentado no ADR.
+> Bedrock Guardrails pro bloqueio de ataque, Amazon Nova Micro pra classificação barata, DeepSeek V3.2 pro agente de risco onde precisão importa mais que custo (mas ainda assim mais barato que Claude Haiku), FAISS + Titan Embeddings pro RAG na política interna, LangGraph pra orquestrar o fluxo com rastreabilidade por nó, GitHub Copilot/Claude Code pra acelerar o desenvolvimento. Cada um resolveu um problema específico, documentado no ADR.
+
+**"Como vocês controlam custo/latência pra não ter surpresa em produção?"**
+> Limite de `max_tokens` em toda chamada de LLM (600 tokens, com folga sobre o que a gente observa na prática — respostas rodam entre 80 e 130 tokens de saída). Sem isso, uma resposta que "engasgasse" ou um modelo mais verboso custaria mais e demoraria mais sem a gente perceber. Achamos essa lacuna durante a validação real e corrigimos antes da entrega.
 
 **"Por que 2 casos de ataque não foram bloqueados?"**
 > São pedidos de extração disfarçados de legítimos (auditoria, pentest, documentação) — mais difíceis de distinguir de um pedido real. Ajustamos o guardrail com um Denied Topic customizado e resolvemos a maioria; os 2 restantes ficam documentados como risco conhecido, mitigado porque o sistema não tem acesso a dado de outros clientes de qualquer forma.

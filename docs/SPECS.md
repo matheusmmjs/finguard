@@ -46,7 +46,7 @@ class LLMClient(Protocol):
 
 Cada agente resolve seu próprio modelo por variável de ambiente (ver §7), não é um único `MODEL_ID` global — assim dá pra trocar o modelo de um agente sem mexer nos outros.
 
-**Fase atual (baseline): todos os agentes em Nova Micro no lado Bedrock.** Ajuste por agente vem depois, pontualmente — o candidato já identificado é subir `agente_risco` para Claude Haiku 4.5 (ver ADR 0001, §5) assim que o baseline em Nova Micro estiver funcionando ponta a ponta.
+**Decisão final: `agente_triagem` e `agente_relatorio` em Nova Micro, `agente_risco` em DeepSeek V3.2** (ver ADR 0001 §5) — DeepSeek entrega raciocínio comparável a Claude Haiku por ~40-63% menos custo, melhor relação custo/capacidade pra essa tarefa.
 
 Mesma assinatura nos dois — resto do código (grafo, agentes, parsing) não muda ao trocar.
 

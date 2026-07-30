@@ -10,6 +10,11 @@ def test_calcular_custo_usd_modelo_conhecido():
     assert custo == pytest.approx(0.15 + 0.60)
 
 
+def test_calcular_custo_usd_deepseek_v3_2():
+    custo = calcular_custo_usd("bedrock", "deepseek.v3-2", tokens_in=1_000_000, tokens_out=1_000_000)
+    assert custo == pytest.approx(0.62 + 1.85)
+
+
 def test_calcular_custo_usd_modelo_desconhecido_retorna_none_nao_zero():
     """Custo desconhecido nunca pode ser contado como grátis -- ver docstring
     de calcular_custo_usd."""
