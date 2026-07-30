@@ -113,6 +113,7 @@ def test_processar_completo_gera_relatorio_json_html_logs_e_bloqueadas(tmp_path,
     assert len(logs) == 2 * 4  # 2 reclamações x 4 nós (entrada, triagem, risco, saída)
     bloqueadas = json.loads((out_dir / "bloqueadas.json").read_text(encoding="utf-8"))
     assert bloqueadas == []
+    assert relatorio["bloqueadas"] == []
 
 
 def test_processar_completo_separa_bloqueadas_do_relatorio(tmp_path, monkeypatch):
@@ -131,3 +132,4 @@ def test_processar_completo_separa_bloqueadas_do_relatorio(tmp_path, monkeypatch
     bloqueadas = json.loads((out_dir / "bloqueadas.json").read_text(encoding="utf-8"))
     assert len(bloqueadas) == 2
     assert all(b["resposta"] for b in bloqueadas)
+    assert len(relatorio["bloqueadas"]) == 2

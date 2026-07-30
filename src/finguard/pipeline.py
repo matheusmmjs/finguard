@@ -67,7 +67,13 @@ def processar_completo(csv_path: str, output_dir: str, limit: int | None = None)
 
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "relatorio.json").write_text(relatorio.model_dump_json(indent=2), encoding="utf-8")
+    # relatorio.json inclui "bloqueadas" pra ficar completo como arquivo de
+    # registro -- mas isso não entra no schema RelatorioOutput em si (agente_
+    # relatorio não decide sobre bloqueio, só agrega o que os agentes produziram).
+    relatorio_completo = {**json.loads(relatorio.model_dump_json()), "bloqueadas": bloqueadas}
+    (out_dir / "relatorio.json").write_text(
+        json.dumps(relatorio_completo, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     (out_dir / "relatorio.html").write_text(renderizar(relatorio, bloqueadas), encoding="utf-8")
     (out_dir / "logs_execucao.json").write_text(json.dumps(logs, ensure_ascii=False, indent=2), encoding="utf-8")
     (out_dir / "bloqueadas.json").write_text(json.dumps(bloqueadas, ensure_ascii=False, indent=2), encoding="utf-8")
