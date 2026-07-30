@@ -39,100 +39,51 @@ _TRIAGEM_PADRAO = TriagemOutput(
 )
 
 
-def test_respeita_clausula_quando_esta_no_contexto_recuperado():
-    client = FakeLLMClient(
-        {
-            "nivel_risco": "Médio",
-            "justificativa": "Impacto financeiro moderado.",
-            "clausula_referencia": "2.2",
-            "acoes_recomendadas": ["Registrar protocolo"],
-        }
-    )
-    retriever = FakeRetriever(_CONTEXTO_PADRAO)
-
-    output = avaliar(_RECLAMACAO_PADRAO, _TRIAGEM_PADRAO, client, retriever)
-
-    assert output.clausula_referencia == "2.2"
-    assert output.nivel_risco == NivelRisco.MEDIO
-
-
-def test_prefere_secao_de_urgencia_ou_canal_sobre_secao_de_produto():
-    """Achado real (dataset REC-2026-00146 rodado tanto localmente quanto na
-    conta Zup): modelo citava a seção de produto (3.x, procedimento) quando o
-    esperado é citar a seção de urgência/canal (2.x/4.x) que de fato justifica
-    o nível de risco. 3.x deve virar ação recomendada, não a cláusula principal,
-    quando há seção de urgência/canal disponível no contexto recuperado."""
-    contexto = [
-        {"secao": "3.3", "titulo": "Empréstimo", "texto": "..."},
-        {"secao": "4.3", "titulo": "Banco Central", "texto": "..."},
-        {"secao": "2.4", "titulo": "Urgência Crítica", "texto": "..."},
+def test_clausula_referencia_sempre_corresponde_ao_nivel_de_risco():
+    """Achado real (REC-2026-00146): mesmo com a regra anterior (preferir
+    seção de urgência/canal sobre produto quando disponível no retrieval),
+    um caso Crítico citou seção 2.3 (Alta) em vez de 2.4 (Crítica) -- porque
+    a citação ainda dependia do que o RAG recuperou pro texto daquela
+    reclamação específica, não do nivel_risco de fato atribuído. Agora é
+    mapeamento direto e fixo, não fica sujeito a isso."""
+    casos = [
+        ("Baixo", "2.1"),
+        ("Médio", "2.2"),
+        ("Alto", "2.3"),
+        ("Crítico", "2.4"),
     ]
+    for nivel_risco_modelo, secao_esperada in casos:
+        client = FakeLLMClient(
+            {
+                "nivel_risco": nivel_risco_modelo,
+                "justificativa": "texto",
+                "clausula_referencia": "3.3",  # o que o modelo disser aqui é ignorado
+                "acoes_recomendadas": [],
+            }
+        )
+        retriever = FakeRetriever([{"secao": "3.3", "titulo": "Empréstimo", "texto": "..."}])
+
+        output = avaliar(_RECLAMACAO_PADRAO, _TRIAGEM_PADRAO, client, retriever)
+
+        assert output.clausula_referencia == secao_esperada
+
+
+def test_urgencia_critica_na_triagem_forca_nivel_risco_e_clausula_2_4():
     client = FakeLLMClient(
         {
-            "nivel_risco": "Crítico",
+            "nivel_risco": "Baixo",  # modelo "errou" -- regra dura deve corrigir os dois campos
             "justificativa": "texto",
-            "clausula_referencia": "3.3",  # modelo citou a de produto -- deve ser corrigido
-            "acoes_recomendadas": ["Recalcular parcelas"],
-        }
-    )
-    retriever = FakeRetriever(contexto)
-    triagem_critica = _TRIAGEM_PADRAO.model_copy(update={"urgencia": Urgencia.CRITICA})
-
-    output = avaliar(_RECLAMACAO_PADRAO, triagem_critica, client, retriever)
-
-    assert output.clausula_referencia == "4.3"  # primeira 2.x/4.x no contexto, na ordem de relevância
-
-
-def test_mantem_secao_de_produto_quando_nao_ha_secao_de_urgencia_ou_canal_no_contexto():
-    contexto = [{"secao": "3.1", "titulo": "Cartão de Crédito", "texto": "..."}]
-    client = FakeLLMClient(
-        {
-            "nivel_risco": "Médio",
-            "justificativa": "texto",
-            "clausula_referencia": "3.1",
-            "acoes_recomendadas": [],
-        }
-    )
-    retriever = FakeRetriever(contexto)
-
-    output = avaliar(_RECLAMACAO_PADRAO, _TRIAGEM_PADRAO, client, retriever)
-
-    assert output.clausula_referencia == "3.1"
-
-
-def test_corrige_clausula_alucinada_para_o_topo_do_retrieval():
-    """Modelo cita uma seção que não veio do RAG -- não pode ser confiado,
-    tem que ser substituído pela seção mais relevante de verdade."""
-    client = FakeLLMClient(
-        {
-            "nivel_risco": "Médio",
-            "justificativa": "texto",
-            "clausula_referencia": "9.9",  # não existe, não veio do retrieval
+            "clausula_referencia": "2.1",
             "acoes_recomendadas": [],
         }
     )
     retriever = FakeRetriever(_CONTEXTO_PADRAO)
-
-    output = avaliar(_RECLAMACAO_PADRAO, _TRIAGEM_PADRAO, client, retriever)
-
-    assert output.clausula_referencia == "2.2"
-
-
-def test_urgencia_critica_na_triagem_forca_nivel_risco_critico():
-    client = FakeLLMClient(
-        {
-            "nivel_risco": "Baixo",  # modelo "errou" -- regra dura deve corrigir
-            "justificativa": "texto",
-            "clausula_referencia": "2.4",
-            "acoes_recomendadas": [],
-        }
-    )
-    retriever = FakeRetriever([{"secao": "2.4", "titulo": "Urgência Crítica", "texto": "..."}])
     triagem_critica = _TRIAGEM_PADRAO.model_copy(update={"urgencia": Urgencia.CRITICA})
 
     output = avaliar(_RECLAMACAO_PADRAO, triagem_critica, client, retriever)
 
     assert output.nivel_risco == NivelRisco.CRITICO
+    assert output.clausula_referencia == "2.4"
 
 
 def test_prompt_usuario_inclui_texto_da_reclamacao_e_contexto_da_politica():
@@ -148,36 +99,16 @@ def test_prompt_usuario_inclui_texto_da_reclamacao_e_contexto_da_politica():
     assert retriever.ultima_busca == _RECLAMACAO_PADRAO.texto_reclamacao
 
 
-def test_cinco_niveis_de_urgencia_retornam_risco_coerente():
-    casos = [
-        ("Baixa", "Baixo", "2.1"),
-        ("Média", "Médio", "2.2"),
-        ("Alta", "Alto", "2.3"),
-        ("Crítica", "Crítico", "2.4"),
-    ]
-    for urgencia, nivel_risco_esperado, secao in casos:
-        client = FakeLLMClient(
-            {
-                "nivel_risco": nivel_risco_esperado,
-                "justificativa": "texto",
-                "clausula_referencia": secao,
-                "acoes_recomendadas": [],
-            }
-        )
-        retriever = FakeRetriever([{"secao": secao, "titulo": "t", "texto": "..."}])
-        triagem = _TRIAGEM_PADRAO.model_copy(update={"urgencia": Urgencia(urgencia)})
-
-        output = avaliar(_RECLAMACAO_PADRAO, triagem, client, retriever)
-
-        assert output.nivel_risco.value == nivel_risco_esperado
-        assert output.clausula_referencia == secao
-
-    # caso ambíguo: triagem não-crítica mas modelo aponta risco Alto -- regra
-    # dura não mexe (só força Crítico quando triagem é Crítica), fica o
-    # julgamento do modelo.
+def test_nivel_risco_nao_forcado_quando_triagem_nao_e_critica():
+    """Regra dura só força Crítico quando triagem.urgencia é Crítica -- fora
+    isso, o julgamento do modelo pro nivel_risco é respeitado (só a cláusula
+    é sempre travada pelo mapeamento)."""
     client = FakeLLMClient(
         {"nivel_risco": "Alto", "justificativa": "texto", "clausula_referencia": "2.2", "acoes_recomendadas": []}
     )
     retriever = FakeRetriever(_CONTEXTO_PADRAO)
+
     output = avaliar(_RECLAMACAO_PADRAO, _TRIAGEM_PADRAO, client, retriever)
+
     assert output.nivel_risco == NivelRisco.ALTO
+    assert output.clausula_referencia == "2.3"

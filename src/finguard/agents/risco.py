@@ -3,6 +3,17 @@ from finguard.llm_json import parse_llm_json
 from finguard.rag.retriever import PolicyRetriever
 from finguard.schemas import NivelRisco, ReclamacaoInput, RiscoOutput, TriagemOutput, Urgencia
 
+# A seção de urgência (2.1-2.4) DEFINE cada nível de risco -- não é uma escolha
+# entre "seções relevantes", é uma correspondência exata e fixa da política.
+# Determinístico, não fica sujeito ao que o RAG recuperou pra essa reclamação
+# específica (SPECS.md §5: regra dura > julgamento do modelo/retrieval).
+_NIVEL_RISCO_PARA_CLAUSULA = {
+    NivelRisco.BAIXO: "2.1",
+    NivelRisco.MEDIO: "2.2",
+    NivelRisco.ALTO: "2.3",
+    NivelRisco.CRITICO: "2.4",
+}
+
 _SYSTEM_PROMPT = f"""\
 Você é o agente de risco e conformidade do FinGuard. Recebe uma reclamação já \
 classificada e trechos relevantes da política interna (POL-SAC-001), e decide o \
@@ -18,16 +29,9 @@ Responda SOMENTE com um objeto JSON, sem texto antes ou depois:
 }}
 
 Use exclusivamente as seções da política fornecidas no contexto -- não invente \
-número de seção que não esteja lá.
-
-Importante sobre qual seção citar em "clausula_referencia": a política tem seções \
-de URGÊNCIA (2.1 a 2.4) e de CANAL (4.1 a 4.4), que explicam POR QUE o caso tem o \
-nível de risco atribuído, e seções de PRODUTO (3.1 a 3.5), que explicam O QUE FAZER \
-a respeito (procedimento). "clausula_referencia" deve priorizar seção de urgência \
-ou canal (2.x ou 4.x) quando alguma estiver disponível no contexto -- é ela que \
-justifica o nível de risco. Seção de produto (3.x) vai em "acoes_recomendadas", \
-não como a cláusula principal, a menos que nenhuma seção de urgência/canal tenha \
-sido fornecida no contexto.
+número de seção que não esteja lá. Se houver uma seção de PRODUTO (3.1 a 3.5) no \
+contexto, use o procedimento dela para compor "acoes_recomendadas" com passos \
+concretos (ex: prazo, quem aciona).
 """
 
 
@@ -54,25 +58,16 @@ def avaliar(
     data = parse_llm_json(raw)
     output = RiscoOutput(**data)
 
-    # Nunca cita cláusula que não veio do retrieval -- sem isso a citação
-    # poderia ser alucinada pelo modelo (SPECS.md §5: regra dura > julgamento).
-    secoes_recuperadas = {c["secao"] for c in contexto}
-    if output.clausula_referencia not in secoes_recuperadas:
-        output.clausula_referencia = contexto[0]["secao"]
-
-    # Seção de urgência (2.x) ou canal (4.x) justifica o nível de risco melhor
-    # que seção de produto (3.x, que é procedimento, não motivo) -- se uma
-    # dessas veio no retrieval, prevalece sobre 3.x mesmo que o modelo tenha
-    # citado a de produto (mesmo raciocínio de regra dura: quando a política já
-    # define a prioridade certa, não fica a critério do modelo divergir).
-    if output.clausula_referencia.startswith("3."):
-        preferida = next((c["secao"] for c in contexto if c["secao"].startswith(("2.", "4."))), None)
-        if preferida is not None:
-            output.clausula_referencia = preferida
-
     # Urgência Crítica na triagem sempre implica risco Crítico -- consistência
     # de negócio, não fica a critério do modelo divergir disso.
     if triagem.urgencia == Urgencia.CRITICA:
         output.nivel_risco = NivelRisco.CRITICO
+
+    # clausula_referencia sempre reflete a seção de urgência que DEFINE o
+    # nivel_risco final -- nunca fica a critério do RAG/modelo escolher outra
+    # seção (produto, canal) pra isso. Justificativa/ações continuam livres
+    # pra citar contexto adicional (ex: procedimento de produto), só a
+    # cláusula principal é travada.
+    output.clausula_referencia = _NIVEL_RISCO_PARA_CLAUSULA[output.nivel_risco]
 
     return output
