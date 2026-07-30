@@ -56,6 +56,50 @@ def test_respeita_clausula_quando_esta_no_contexto_recuperado():
     assert output.nivel_risco == NivelRisco.MEDIO
 
 
+def test_prefere_secao_de_urgencia_ou_canal_sobre_secao_de_produto():
+    """Achado real (dataset REC-2026-00146 rodado tanto localmente quanto na
+    conta Zup): modelo citava a seção de produto (3.x, procedimento) quando o
+    esperado é citar a seção de urgência/canal (2.x/4.x) que de fato justifica
+    o nível de risco. 3.x deve virar ação recomendada, não a cláusula principal,
+    quando há seção de urgência/canal disponível no contexto recuperado."""
+    contexto = [
+        {"secao": "3.3", "titulo": "Empréstimo", "texto": "..."},
+        {"secao": "4.3", "titulo": "Banco Central", "texto": "..."},
+        {"secao": "2.4", "titulo": "Urgência Crítica", "texto": "..."},
+    ]
+    client = FakeLLMClient(
+        {
+            "nivel_risco": "Crítico",
+            "justificativa": "texto",
+            "clausula_referencia": "3.3",  # modelo citou a de produto -- deve ser corrigido
+            "acoes_recomendadas": ["Recalcular parcelas"],
+        }
+    )
+    retriever = FakeRetriever(contexto)
+    triagem_critica = _TRIAGEM_PADRAO.model_copy(update={"urgencia": Urgencia.CRITICA})
+
+    output = avaliar(_RECLAMACAO_PADRAO, triagem_critica, client, retriever)
+
+    assert output.clausula_referencia == "4.3"  # primeira 2.x/4.x no contexto, na ordem de relevância
+
+
+def test_mantem_secao_de_produto_quando_nao_ha_secao_de_urgencia_ou_canal_no_contexto():
+    contexto = [{"secao": "3.1", "titulo": "Cartão de Crédito", "texto": "..."}]
+    client = FakeLLMClient(
+        {
+            "nivel_risco": "Médio",
+            "justificativa": "texto",
+            "clausula_referencia": "3.1",
+            "acoes_recomendadas": [],
+        }
+    )
+    retriever = FakeRetriever(contexto)
+
+    output = avaliar(_RECLAMACAO_PADRAO, _TRIAGEM_PADRAO, client, retriever)
+
+    assert output.clausula_referencia == "3.1"
+
+
 def test_corrige_clausula_alucinada_para_o_topo_do_retrieval():
     """Modelo cita uma seção que não veio do RAG -- não pode ser confiado,
     tem que ser substituído pela seção mais relevante de verdade."""
