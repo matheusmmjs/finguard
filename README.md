@@ -15,6 +15,7 @@ Desafio Future Minds 3 (Zup) — assistente inteligente de análise de reclamaç
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Checklist de conformidade com as regras do desafio |
 | [docs/TASKS.md](docs/TASKS.md) | Backlog, Definition of Ready, critério de aceite por tarefa |
 | [docs/COST_REPORT.md](docs/COST_REPORT.md) | Custo real de LLM + Claude Code (gerado automaticamente) |
+| [docs/PITCH.md](docs/PITCH.md) | Roteiro de apresentação (5 min + perguntas da banca) |
 
 ## Setup
 
